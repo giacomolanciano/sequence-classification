@@ -55,5 +55,6 @@ class Crawler(object):
 if __name__ == '__main__':
     c = Crawler()
     c.build_proteins_dataset(TABLE_PDB_FILE)
-    print('errored pdb_ids: ' + str(c.errored_pdb_id))
-    print('# unique labels: ' + str(persistence.get_proteins_unique_labels()))
+    if c.errored_pdb_id:
+        print('errored pdb_ids: ' + str(c.errored_pdb_id))
+    print('unique labels: ' + str(persistence.get_proteins_unique_labels()))
