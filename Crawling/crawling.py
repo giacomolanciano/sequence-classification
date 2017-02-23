@@ -33,7 +33,7 @@ class Crawler(object):
                     class_label = soup.find('ul', attrs={'class': 'list-unstyled'}).find('li').find('a')\
                         .get_text().strip()
 
-                except (TimeoutError | ConnectionError) as err:
+                except (TimeoutError, ConnectionError) as err:
                     # if network error occurs, skip
                     print(err)
                     self.errored_pdb_id.append(pdb_id)
