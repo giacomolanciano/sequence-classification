@@ -10,41 +10,42 @@ PDB_ID_HEADER = 'PDB'
 
 
 class Crawler(object):
-    def __init__(self, ):
+    def __init__(self, progress=True):
+        self.progress = progress
         self.errored_pdb_id = []
-        self.class_dic = {}  # dummy dict, only to check how many class labels
 
     def build_proteins_dataset(self, data_path):
         with open(data_path, 'rb') as file:
             reader = csv.DictReader(file, delimiter='\t', encoding='utf-8')
             for i, row in enumerate(reader):
-                print(i)
+                if self.progress:
+                    print(i)
+
                 pdb_id = row[PDB_ID_HEADER]
 
-                try:
+                # check whether protein is already in db to avoid costly network operations
+                if not persistence.is_known_protein(pdb_id):
+                    try:
 
-                    # download sequence in FASTA format
-                    fasta_http_request = requests.get(FASTA_URL + pdb_id)
-                    sequence = self._parse_protein_sequence(fasta_http_request.text)
+                        # download sequence in FASTA format
+                        fasta_http_request = requests.get(FASTA_URL + pdb_id)
+                        sequence = self._parse_protein_sequence(fasta_http_request.text)
 
-                    # download class label corresponding to sequence
-                    class_http_request = requests.get(CLASS_URL + pdb_id)
-                    soup = bs(class_http_request.text, 'lxml')
-                    class_label = soup.find('ul', attrs={'class': 'list-unstyled'}).find('li').find('a')\
-                        .get_text().strip()
+                        # download class label corresponding to sequence
+                        class_http_request = requests.get(CLASS_URL + pdb_id)
+                        soup = bs(class_http_request.text, 'lxml')
+                        class_label = soup.find('ul', attrs={'class': 'list-unstyled'}).find('li').find('a')\
+                            .get_text().strip()
 
-                except (TimeoutError, ConnectionError) as err:
-                    # if network error occurs, skip
-                    print(err)
-                    self.errored_pdb_id.append(pdb_id)
-                    continue
+                        # insert protein data in db
+                        persistence.insert_protein(pdb_id, sequence, class_label)
 
-                # insert protein data in db
-                persistence.insert_protein(pdb_id, sequence, class_label)
-
-                self.class_dic[class_label] = ''
-
-            print(len(self.class_dic))
+                    except (TimeoutError, ConnectionError) as err:
+                        # if network error occurs, skip
+                        if self.progress:
+                            print(err)
+                        self.errored_pdb_id.append(pdb_id)
+                        continue
 
     @staticmethod
     def _parse_protein_sequence(fasta_sequence):

@@ -3,6 +3,7 @@ from utils.constants import DATABASE
 
 
 def insert_protein(pdb_id, sequence, class_label):
+    """ Insert protein data into db. """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     try:
@@ -11,6 +12,18 @@ def insert_protein(pdb_id, sequence, class_label):
         print(err)
     connection.commit()
     connection.close()
+
+
+def is_known_protein(pdb_id):
+    """ Tells whether a protein is already in db or not. """
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute('''SELECT * FROM protein WHERE pdb_id = ?''', (pdb_id,))
+    for _ in cursor:
+        return True  # if result contains at least one tuple, return True
+    connection.commit()
+    connection.close()
+    return False
 
 
 if __name__ == '__main__':
