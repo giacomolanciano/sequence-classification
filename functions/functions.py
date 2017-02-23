@@ -19,6 +19,7 @@ def p_spectrum_kernel_function(string1, string2):
     print(kernel_matrix)
     return kernel_matrix
 
+
 def get_substring(m_string, spectrum):
     tmp_list = []
     if spectrum == 0:
