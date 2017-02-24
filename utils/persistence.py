@@ -29,6 +29,8 @@ def is_known_protein(pdb_id):
     cursor = connection.cursor()
     cursor.execute('''SELECT * FROM protein WHERE pdb_id = ?''', (pdb_id,))
     for _ in cursor:
+        connection.commit()
+        connection.close()
         return True  # if result contains at least one tuple, return True
     connection.commit()
     connection.close()

@@ -1,9 +1,13 @@
-import unicodecsv as csv
-from bs4 import BeautifulSoup as bs
-import requests
-import utils.persistence as persistence
+import os
 
-TABLE_PDB_FILE = '../Data/Table_PDB_Domain.tsv'
+import unicodecsv as csv
+import requests
+from bs4 import BeautifulSoup as bs
+
+import utils.persistence as persistence
+from utils.constants import DATA_FOLDER
+
+TABLE_PDB_FILE = os.path.join(DATA_FOLDER, 'Table_PDB_Domain.tsv')
 FASTA_URL = 'http://www.rcsb.org/pdb/files/fasta.txt?structureIdList='
 CLASS_URL = 'http://www.rcsb.org/pdb/explore/explore.do?structureId='
 PDB_ID_HEADER = 'PDB'
