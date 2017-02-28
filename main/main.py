@@ -60,5 +60,3 @@ for j in range(len(Y_test), max_size):
 
 print(Y_test)
 print(clf.predict(Y_test))
-
-
