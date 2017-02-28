@@ -63,12 +63,11 @@ class Crawler(object):
             header_line = file.readline()
             sequence_line = file.readline()
 
-            while header_line is not '':
+            while header_line != '':
                 pdb_id = Crawler._parse_protein_pdb_id(header_line)
 
                 if self.progress:
                     print(i)
-                    print(pdb_id)
 
                 # check whether protein is already in db to avoid costly network operations
                 if not persistence.is_known_protein(pdb_id):
