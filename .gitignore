@@ -360,5 +360,5 @@ crashlytics-build.properties
 fabric.properties
 
 # data
-data/proteins.db
-data/pdb_seqres.txt
+Data/proteins.db
+Data/pdb_seqres.txt
