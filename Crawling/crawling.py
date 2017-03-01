@@ -50,7 +50,6 @@ class Crawler(object):
                         if self.progress:
                             print(err)
                         self.errored_pdb_id.append(pdb_id)
-                        continue
 
     @staticmethod
     def _parse_protein_sequence(fasta_sequence):
@@ -87,7 +86,6 @@ class Crawler(object):
                         if self.progress:
                             print(err)
                         self.errored_pdb_id.append(pdb_id)
-                        continue
 
                 i += 1
                 header_line = file.readline()
