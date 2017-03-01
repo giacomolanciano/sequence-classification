@@ -67,9 +67,15 @@ if __name__ == '__main__':
     # Delete tables rows
     # c.execute("DELETE FROM protein")
 
-    # Show  tables
+    # Show tables
     # print('\nprotein')
     # c.execute("SELECT * FROM protein")
+    # for row in c:
+    #     print(row)
+
+    # Show class labels items numbers
+    # print('\nclass labels')
+    # c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC''')
     # for row in c:
     #     print(row)
 
