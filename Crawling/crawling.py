@@ -81,7 +81,7 @@ class Crawler(object):
                         # insert protein data in db
                         persistence.insert_protein(pdb_id, sequence_line, class_label)
 
-                    except (TimeoutError, ConnectionError) as err:
+                    except (TimeoutError, ConnectionError, AttributeError) as err:
                         # if network error occurs, skip
                         if self.progress:
                             print(err)
