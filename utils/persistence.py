@@ -73,11 +73,11 @@ if __name__ == '__main__':
     # for row in c:
     #     print(row)
 
-    # Show class labels items numbers
-    # print('\nclass labels')
-    # c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC''')
-    # for row in c:
-    #     print(row)
+    # Show class labels items numbers (top 5)
+    print('\nclass labels')
+    c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC LIMIT 5''')
+    for row in c:
+        print(row)
 
     # Save (commit) the changes
     conn.commit()
