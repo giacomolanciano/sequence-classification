@@ -75,8 +75,10 @@ class Crawler(object):
                         # download class label corresponding to sequence
                         class_http_request = requests.get(CLASS_URL + pdb_id)
                         soup = bs(class_http_request.text, 'lxml')
-                        class_label = soup.find('ul', attrs={'class': 'list-unstyled'}).find('li').find('a')\
-                            .get_text().strip()
+                        class_label_tag = soup.find('ul', attrs={'class': 'list-unstyled'}).find('li').find('a')
+
+                        # convert all labels to uppercase to unify
+                        class_label = class_label_tag.get_text().strip().upper()
 
                         # insert protein data in db
                         persistence.insert_protein(pdb_id, sequence_line, class_label)
