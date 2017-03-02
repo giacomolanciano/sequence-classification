@@ -67,7 +67,7 @@ class Crawler(object):
 
             i = 0
             header_line = file.readline()
-            sequence_line = file.readline()
+            sequence_line = file.readline().strip()
 
             while header_line != '':
                 pdb_id = Crawler._parse_protein_pdb_id(header_line)

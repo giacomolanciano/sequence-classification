@@ -12,6 +12,7 @@ def insert_protein(pdb_id, sequence, class_label):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     try:
+        cursor.execute('''INSERT INTO protein_dupl VALUES (?,?,?)''', (pdb_id, sequence, class_label))
         cursor.execute('''INSERT INTO protein VALUES (?,?,?)''', (pdb_id, sequence, class_label))
     except sqlite3.IntegrityError as err:
         print(err)
@@ -27,7 +28,7 @@ def is_known_protein(pdb_id):
     """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
-    cursor.execute('''SELECT * FROM protein WHERE pdb_id = ?''', (pdb_id,))
+    cursor.execute('''SELECT * FROM protein_dupl WHERE pdb_id = ?''', (pdb_id,))
     for _ in cursor:
         connection.commit()
         connection.close()
@@ -59,7 +60,8 @@ if __name__ == '__main__':
     c = conn.cursor()
 
     # Create tables
-    c.execute('''CREATE TABLE IF NOT EXISTS protein (pdb_id PRIMARY KEY, sequence, class_label)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, PRIMARY KEY(sequence, class_label))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS protein_dupl (pdb_id PRIMARY KEY, sequence, class_label)''')
 
     # Delete tables
     # c.execute("DROP TABLE protein")
@@ -74,10 +76,19 @@ if __name__ == '__main__':
     #     print(row)
 
     # Show class labels items numbers (top 5)
-    print('\nclass labels')
-    c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC LIMIT 5''')
-    for row in c:
-        print(row)
+    # print('\nclass labels')
+    # c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC LIMIT 5''')
+    # for row in c:
+    #     print(row)
+
+    # Pass data into new table to filter in-class duplicates
+    # c.execute('''SELECT * FROM protein_dupl''')
+    # for row in c:
+    #     cursor = conn.cursor()
+    #     try:
+    #         cursor.execute('''INSERT INTO protein VALUES (?,?,?)''', (row[0], row[1].strip(), row[2]))
+    #     except sqlite3.IntegrityError as err:
+    #         print(err)
 
     # Save (commit) the changes
     conn.commit()
