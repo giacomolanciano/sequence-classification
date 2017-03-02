@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup as bs
 import utils.persistence as persistence
 from utils.constants import DATA_FOLDER
 
-TABLE_PDB_FILE = os.path.join(DATA_FOLDER, 'Table_PDB_Domain.tsv')
-PDB_FILE = os.path.join(DATA_FOLDER, 'pdb_seqres.txt')
+UNIPROT_PDB_FILE = os.path.join(DATA_FOLDER, 'Table_PDB_Domain.tsv')  # Uniprot dataset
+RCSB_PDB_FILE = os.path.join(DATA_FOLDER, 'pdb_seqres.txt')           # RCSB dataset
 FASTA_URL = 'http://www.rcsb.org/pdb/files/fasta.txt?structureIdList='
 CLASS_URL = 'http://www.rcsb.org/pdb/explore/explore.do?structureId='
 PDB_ID_HEADER = 'PDB'
@@ -16,10 +16,17 @@ PDB_ID_HEADER = 'PDB'
 
 class Crawler(object):
     def __init__(self, progress=True):
+        """
+        :param progress: whether progess prints should be shown or not.
+        """
         self.progress = progress
         self.errored_pdb_id = []
 
-    def build_proteins_dataset(self, data_path):
+    def build_proteins_dataset_uniprot(self, data_path):
+        """
+        Build protein SQL table from Uniprot dataset.
+        :param data_path: path to dataset file.
+        """
         with open(data_path, 'rb') as file:
             reader = csv.DictReader(file, delimiter='\t', encoding='utf-8')
             for i, row in enumerate(reader):
@@ -51,11 +58,11 @@ class Crawler(object):
                             print(err)
                         self.errored_pdb_id.append(pdb_id)
 
-    @staticmethod
-    def _parse_protein_sequence(fasta_sequence):
-        return fasta_sequence.split('>')[1].split('\n', maxsplit=1)[1].replace('\n', '')
-
-    def build_proteins_dataset_local(self, data_path):
+    def build_proteins_dataset_rcsb(self, data_path):
+        """
+        Build protein SQL table from RCSB dataset.
+        :param data_path: path to dataset file.
+        """
         with open(data_path, 'r') as file:
 
             i = 0
@@ -94,15 +101,29 @@ class Crawler(object):
                 sequence_line = file.readline()
 
     @staticmethod
-    def _parse_protein_pdb_id(header):
-        return str(header[1:5]).upper()
+    def _parse_protein_sequence(fasta_sequence):
+        """
+        Parse and return protein sequence from Uniprot FASTA representation.
+        :param fasta_sequence: FASTA representation of the sequence.
+        :return: a string corresponding to the sequence.
+        """
+        return fasta_sequence.split('>')[1].split('\n', maxsplit=1)[1].replace('\n', '')
+
+    @staticmethod
+    def _parse_protein_pdb_id(header_line):
+        """
+        Parse and return pdb id from RCSB dataset header line.
+        :param header_line: the header line.
+        :return: a string corresponding to pdb id.
+        """
+        return str(header_line[1:5]).upper()
 
 if __name__ == '__main__':
     c = Crawler()
 
-    # c.build_proteins_dataset(TABLE_PDB_FILE)
+    # c.build_proteins_dataset_uniprot(UNIPROT_PDB_FILE)
+    c.build_proteins_dataset_rcsb(RCSB_PDB_FILE)
 
-    c.build_proteins_dataset_local(PDB_FILE)
     if c.errored_pdb_id:
         print('errored pdb_ids: ' + str(c.errored_pdb_id))
     print('unique labels: ' + str(persistence.get_proteins_unique_labels()))
