@@ -52,7 +52,12 @@ def get_proteins_unique_labels():
     return result
 
 
-def get_data_by_table(table_name="protein"):
+def get_table(table_name='protein'):
+    """
+    Get all records from a given SQL table.
+    :param table_name: a string indicating the table.
+    :return: a list of lists representing the records.
+    """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     cursor.execute('SELECT * FROM ' + table_name)
@@ -61,7 +66,13 @@ def get_data_by_table(table_name="protein"):
     return table
 
 
-def get_data_by_label(label_name, table_name="protein"):
+def get_rows_by_label(label_name, table_name='protein'):
+    """
+    Get all records related to a given label from a given SQL table.
+    :param label_name: a string indicating the label.
+    :param table_name: a string indicating the table.
+    :return: a list of lists representing the records.
+    """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
@@ -70,7 +81,13 @@ def get_data_by_label(label_name, table_name="protein"):
     return table
 
 
-def get_sequence_label_data_by_label(label_name, table_name="protein"):
+def get_training_inputs_by_label(label_name, table_name='protein'):
+    """
+    Get all training inputs related to a given label from a given SQL table.
+    :param label_name: a string indicating the label.
+    :param table_name: a string indicating the table.
+    :return: a list of lists representing the records.
+    """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))

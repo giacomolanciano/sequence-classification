@@ -17,7 +17,7 @@ class MachineLearningInput(object):
     def _get_data_and_labels_by_labels(labels):
         train_test_matrix = []
         for label in labels:
-            label_table = persistence.get_sequence_label_data_by_label(label)
+            label_table = persistence.get_training_inputs_by_label(label)
             for row in label_table:
                 train_test_matrix.append(row)
         train_test_matrix = np.asarray(train_test_matrix)
