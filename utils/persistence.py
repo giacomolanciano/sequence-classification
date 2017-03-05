@@ -33,7 +33,6 @@ def is_known_protein(pdb_id):
         connection.commit()
         connection.close()
         return True  # if result contains at least one tuple, return True
-    connection.commit()
     connection.close()
     return False
 
@@ -49,7 +48,6 @@ def get_proteins_unique_labels():
     cursor.execute('''SELECT COUNT(DISTINCT class_label) FROM protein''')
     for row in cursor:
         result = row[0]
-    connection.commit()
     connection.close()
     return result
 
