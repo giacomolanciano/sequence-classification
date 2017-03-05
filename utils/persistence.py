@@ -52,41 +52,66 @@ def get_proteins_unique_labels():
     return result
 
 
-if __name__ == '__main__':
+def get_data_by_table(table_name="protein"):
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM ' + table_name)
+    table = cursor.fetchall()
+    connection.close()
+    return table
 
+
+def get_data_by_label(label_name, table_name="protein"):
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+    table = cursor.fetchall()
+    connection.close()
+    return table
+
+
+def get_sequence_label_data_by_label(label_name, table_name="protein"):
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+    table = cursor.fetchall()
+    connection.close()
+    return table
+
+
+def _filter_in_label_duplicates():
+    """
+    Pass data into new table to filter in-label duplicates.
+    """
+    connection = sqlite3.connect(DATABASE)
+    cursor1 = connection.cursor()
+    cursor1.execute('''SELECT * FROM protein_dupl''')
+    for row in cursor1:
+        cursor2 = connection.cursor()
+        try:
+            cursor2.execute('''INSERT INTO protein VALUES (?,?,?)''', (row[0], row[1], row[2]))
+        except sqlite3.IntegrityError as err:
+            print(err)
+    connection.commit()
+    connection.close()
+
+
+if __name__ == '__main__':
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
     # Create tables
-    c.execute('''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, PRIMARY KEY(sequence, class_label))''')
+    c.execute(
+        '''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, PRIMARY KEY(sequence, class_label))''')
     c.execute('''CREATE TABLE IF NOT EXISTS protein_dupl (pdb_id PRIMARY KEY, sequence, class_label)''')
 
-    # Delete tables
-    # c.execute("DROP TABLE protein")
-
-    # Delete tables rows
-    # c.execute("DELETE FROM protein")
-
     # Show tables
-    # print('\nprotein')
     # c.execute("SELECT * FROM protein")
-    # for row in c:
-    #     print(row)
+    # for r in c:
+    #     print(r)
 
-    # Show class labels items numbers (top 5)
-    # print('\nclass labels')
-    # c.execute('''SELECT class_label, COUNT(*) items FROM protein GROUP BY class_label ORDER BY items DESC LIMIT 5''')
-    # for row in c:
-    #     print(row)
-
-    # Pass data into new table to filter in-class duplicates
-    # c.execute('''SELECT * FROM protein_dupl''')
-    # for row in c:
-    #     cursor = conn.cursor()
-    #     try:
-    #         cursor.execute('''INSERT INTO protein VALUES (?,?,?)''', (row[0], row[1].strip(), row[2]))
-    #     except sqlite3.IntegrityError as err:
-    #         print(err)
+    # print(get_data_by_label('HYDROLASE'))
+    # print(get_sequence_label_data_by_label('HYDROLASE'))
 
     # Save (commit) the changes
     conn.commit()
