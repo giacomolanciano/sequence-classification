@@ -67,7 +67,7 @@ class Crawler(object):
 
             i = 0
             header_line = file.readline()
-            sequence_line = file.readline().strip()
+            sequence_line = file.readline()
 
             while header_line != '':
                 pdb_id = Crawler._parse_protein_pdb_id(header_line)
@@ -88,7 +88,7 @@ class Crawler(object):
                         class_label = class_label_tag.get_text().strip().upper()
 
                         # insert protein data in db
-                        persistence.insert_protein(pdb_id, sequence_line, class_label)
+                        persistence.insert_protein(pdb_id, sequence_line.strip(), class_label)
 
                     except (TimeoutError, ConnectionError, AttributeError) as err:
                         # if network error occurs, skip
@@ -116,7 +116,7 @@ class Crawler(object):
         :param header_line: the header line.
         :return: a string corresponding to pdb id.
         """
-        return str(header_line[1:5]).upper()
+        return str(header_line[1:5]).strip().upper()
 
 if __name__ == '__main__':
     c = Crawler()
