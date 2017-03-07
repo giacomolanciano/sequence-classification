@@ -81,7 +81,7 @@ def get_rows_by_label(label_name, table_name='protein'):
     return table
 
 
-def get_training_inputs_by_label(label_name, table_name='protein'):
+def get_training_inputs_by_label(label_name, table_name='protein', limit = None):
     """
     Get all training inputs related to a given label from a given SQL table.
     :param label_name: a string indicating the label.
@@ -90,7 +90,10 @@ def get_training_inputs_by_label(label_name, table_name='protein'):
     """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
-    cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+    if limit:
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?', (label_name,limit))
+    else:
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?',(label_name,))
     table = cursor.fetchall()
     connection.close()
     return table
