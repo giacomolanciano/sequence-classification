@@ -52,48 +52,58 @@ def get_proteins_unique_labels():
     return result
 
 
-def get_table(table_name='protein'):
+def get_table(table_name='protein', limit=None):
     """
     Get all records from a given SQL table.
     :param table_name: a string indicating the table.
-    :return: a list of lists representing the records.
-    """
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM ' + table_name)
-    table = cursor.fetchall()
-    connection.close()
-    return table
-
-
-def get_rows_by_label(label_name, table_name='protein'):
-    """
-    Get all records related to a given label from a given SQL table.
-    :param label_name: a string indicating the label.
-    :param table_name: a string indicating the table.
-    :return: a list of lists representing the records.
-    """
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
-    table = cursor.fetchall()
-    connection.close()
-    return table
-
-
-def get_training_inputs_by_label(label_name, table_name='protein', limit = None):
-    """
-    Get all training inputs related to a given label from a given SQL table.
-    :param label_name: a string indicating the label.
-    :param table_name: a string indicating the table.
+    :param limit: maximum number of rows to be returned.
     :return: a list of lists representing the records.
     """
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     if limit:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?', (label_name,limit))
+        cursor.execute('SELECT * FROM ' + table_name + 'LIMIT ?', (limit,))
     else:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?',(label_name,))
+        cursor.execute('SELECT * FROM ' + table_name)
+    table = cursor.fetchall()
+    connection.close()
+    return table
+
+
+def get_rows_by_label(label_name, table_name='protein', limit=None):
+    """
+    Get all records related to a given label from a given SQL table.
+    :param label_name: a string indicating the label.
+    :param table_name: a string indicating the table.
+    :param limit: maximum number of rows to be returned.
+    :return: a list of lists representing the records.
+    """
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    if limit:
+        cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?', (label_name, limit))
+    else:
+        cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+    table = cursor.fetchall()
+    connection.close()
+    return table
+
+
+def get_training_inputs_by_label(label_name, table_name='protein', limit=None):
+    """
+    Get all training inputs related to a given label from a given SQL table.
+    :param label_name: a string indicating the label.
+    :param table_name: a string indicating the table.
+    :param limit: maximum number of rows to be returned.
+    :return: a list of lists representing the records.
+    """
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    if limit:
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?',
+                       (label_name, limit))
+    else:
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
     table = cursor.fetchall()
     connection.close()
     return table
