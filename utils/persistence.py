@@ -126,13 +126,35 @@ def _filter_in_label_duplicates():
     connection.close()
 
 
+def _fill_bases_sequence_fields():
+    connection = sqlite3.connect(DATABASE)
+    cursor1 = connection.cursor()
+    cursor1.execute('''SELECT * FROM protein''')
+    for i, row in enumerate(cursor1):
+        print(i)
+        cursor2 = connection.cursor()
+        bases_seq = _translate_sequence_into_bases(row[1])
+        try:
+            cursor2.execute('''UPDATE protein SET bases_sequence = ? WHERE sequence = ? AND class_label = ?''',
+                            (bases_seq, row[1], row[2]))
+        except sqlite3.IntegrityError as err:
+            print(err)
+    connection.commit()
+    connection.close()
+
+
+def _translate_sequence_into_bases(sequence):
+    # TODO
+    return None
+
+
 if __name__ == '__main__':
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
     # Create tables
-    c.execute(
-        '''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, PRIMARY KEY(sequence, class_label))''')
+    c.execute('''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, bases_sequence,
+              PRIMARY KEY(sequence, class_label))''')
     c.execute('''CREATE TABLE IF NOT EXISTS protein_dupl (pdb_id PRIMARY KEY, sequence, class_label)''')
 
     # Show tables
@@ -142,6 +164,8 @@ if __name__ == '__main__':
 
     # print(get_data_by_label('HYDROLASE'))
     # print(get_sequence_label_data_by_label('HYDROLASE'))
+
+    # _fill_bases_sequence_fields()
 
     # Save (commit) the changes
     conn.commit()
