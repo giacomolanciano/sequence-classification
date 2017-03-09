@@ -11,8 +11,8 @@ class MachineLearningInput(object):
         self.input_size = input_size
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size = None, None, None, None,None
 
-    def set_train_test_data(self, labels, size=0.25, random_state=42):
-        data, labels = MachineLearningInput._get_data_and_labels_by_labels(labels)
+    def set_train_test_data(self, considered_labels, size=0.25, random_state=42):
+        data, labels = self._get_data_and_labels_by_labels(considered_labels)
 
         # apply shingling on data
         data = [functions.get_substring(item) for item in data]
