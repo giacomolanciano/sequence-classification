@@ -6,11 +6,12 @@ from utils import persistence
 
 
 class MachineLearningInput(object):
-    def __init__(self, progress=True):
+    def __init__(self, input_size=100, progress=True):
         self.progress = progress
+        self.input_size = input_size
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size = None, None, None, None,None
 
-    def set_train_test_data(self, labels, size=0.80, random_state=42):
+    def set_train_test_data(self, labels, size=0.25, random_state=42):
         data, labels = MachineLearningInput._get_data_and_labels_by_labels(labels)
 
         # apply shingling on data
@@ -42,11 +43,10 @@ class MachineLearningInput(object):
                 print(item)
                 print(label)
 
-    @staticmethod
-    def _get_data_and_labels_by_labels(labels):
+    def _get_data_and_labels_by_labels(self, labels):
         train_test_matrix = []
         for label in labels:
-            label_table = persistence.get_training_inputs_by_label(label, limit=100)
+            label_table = persistence.get_training_inputs_by_label(label, limit=self.input_size)
             for row in label_table:
                 train_test_matrix.append(row)
         train_test_matrix = np.asarray(train_test_matrix)

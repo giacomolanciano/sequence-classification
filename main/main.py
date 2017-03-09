@@ -63,7 +63,7 @@ import time
 # print(Y_test)
 # print(clf.predict(Y_test))
 
-my_ml_input = MachineLearningInput()
+my_ml_input = MachineLearningInput(input_size=10)  # to speed up testing
 my_ml_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
 
 clf = svm.SVC(kernel=p_spectrum_kernel_function)
@@ -71,9 +71,9 @@ print('---')
 print(my_ml_input.train_data)
 print(my_ml_input.train_labels)
 start_time = time.time()
-clf.fit(my_ml_input.train_data[: 5], np.asarray(my_ml_input.train_labels[: 5]))
+clf.fit(my_ml_input.train_data, np.asarray(my_ml_input.train_labels))
 print('fit completed')
-accuracy = clf.score(my_ml_input.test_data[: 3], my_ml_input.test_labels[: 3])
+accuracy = clf.score(my_ml_input.test_data, my_ml_input.test_labels)
 print("--- %s seconds ---" % (time.time() - start_time))
 print(accuracy)
 

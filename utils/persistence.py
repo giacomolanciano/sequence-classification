@@ -100,10 +100,12 @@ def get_training_inputs_by_label(label_name, table_name='protein', limit=None):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     if limit:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?',
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name +
+                       ' WHERE class_label =  ? ORDER BY RANDOM() LIMIT ?',
                        (label_name, limit))
     else:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? ORDER BY RANDOM()',
+                       (label_name,))
     table = cursor.fetchall()
     connection.close()
     return table
@@ -124,28 +126,6 @@ def _filter_in_label_duplicates():
             print(err)
     connection.commit()
     connection.close()
-
-
-def _fill_bases_sequence_fields():
-    connection = sqlite3.connect(DATABASE)
-    cursor1 = connection.cursor()
-    cursor1.execute('''SELECT * FROM protein''')
-    for i, row in enumerate(cursor1):
-        print(i)
-        cursor2 = connection.cursor()
-        bases_seq = _translate_sequence_into_bases(row[1])
-        try:
-            cursor2.execute('''UPDATE protein SET bases_sequence = ? WHERE sequence = ? AND class_label = ?''',
-                            (bases_seq, row[1], row[2]))
-        except sqlite3.IntegrityError as err:
-            print(err)
-    connection.commit()
-    connection.close()
-
-
-def _translate_sequence_into_bases(sequence):
-    # TODO
-    return None
 
 
 if __name__ == '__main__':
