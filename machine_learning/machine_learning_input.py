@@ -8,16 +8,34 @@ from utils import persistence
 class MachineLearningInput(object):
     def __init__(self, progress=True):
         self.progress = progress
-        self.train_data, self.test_data, self.train_labels, self.test_labels = None, None, None, None
+        self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size = None, None, None, None,None
 
-    def set_train_test_data(self, labels, size=0.25, random_state=42):
+    def set_train_test_data(self, labels, size=0.80, random_state=42):
         data, labels = MachineLearningInput._get_data_and_labels_by_labels(labels)
 
         # apply shingling on data
         data = [functions.get_substring(item) for item in data]
+        transformed_data = []
+
+        for sequence in data:
+            transformed_sequence = []
+            for shingl in sequence:
+                transformed_sequence.append(functions.from_string_to_int(shingl))
+            transformed_data.append(transformed_sequence)
+
+        pad_data,self.max_feature_size = functions.pad_data(transformed_data)
+
+        transformed_label = []
+        for label in labels:
+            if label == 'TRANSCRIPTION':
+                transformed_label.append(0)
+            elif label == 'LYASE':
+                transformed_label.append(1)
+            else:
+                transformed_label.append(2)
 
         self.train_data, self.test_data, self.train_labels, self.test_labels \
-            = train_test_split(data, labels, test_size=size, random_state=random_state)
+            = train_test_split(pad_data, transformed_label, test_size=size, random_state=random_state)
 
         if self.progress:
             for item, label in zip(self.train_data, self.train_labels):
@@ -37,4 +55,4 @@ class MachineLearningInput(object):
 
 if __name__ == '__main__':
     my_ml_input = MachineLearningInput()
-    my_ml_input.set_train_test_data(['HYDROLASE'])
+    my_ml_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])

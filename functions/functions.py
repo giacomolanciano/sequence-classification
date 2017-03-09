@@ -11,7 +11,7 @@ def p_spectrum_kernel_function(string1, string2):
             kernel = 0
             for i in ele1:
                 for j in ele2:
-                    if (i == j) and (i != 0):
+                    if i == j and i != 0:
                         kernel += 1
             row.append(kernel)
         kernel_matrix.append(row)
@@ -29,12 +29,28 @@ def get_substring(string, spectrum=3):
     return result
 
 
-def f_s_t_f(string):
-    result = ""
+def from_string_to_int(string):
+    result = ''
     for element in string:
         result += str(alphabet_dictionary[element])
     return int(result)
 
+
+def pad_data(X_train):
+
+    max_size = 0
+    for i in X_train:
+        size = len(i)
+        if size > max_size:
+            max_size = size
+
+    # ...rendo tutti gli altri della stessa taglia
+
+    for i in X_train:
+        if len(i) != max_size:
+            for j in range(len(i), max_size):
+                i.append(0)
+    return X_train, max_size
 
 if __name__ == '__main__':
     s = 'jhgfdkhgv'
