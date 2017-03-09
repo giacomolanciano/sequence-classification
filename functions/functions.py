@@ -15,26 +15,28 @@ def p_spectrum_kernel_function(string1, string2):
                         kernel += 1
             row.append(kernel)
         kernel_matrix.append(row)
-
     print(kernel_matrix)
     return kernel_matrix
 
 
-def get_substring(m_string, spectrum):
-    tmp_list = []
+def get_substring(string, spectrum=3):
     if spectrum == 0:
-        tmp_list = ['']
+        result = ['']
+    elif len(string) <= spectrum:
+        result = [string]
     else:
-        for i in range(len(m_string) - spectrum + 1):
-            m_string_res = ''
-            for j in range(spectrum):
-                m_string_res += m_string[i + j]
-            tmp_list.append(m_string_res)
-    return tmp_list
+        result = [string[i: i + spectrum] for i in range(len(string) - spectrum + 1)]
+    return result
 
 
-def f_s_t_f(m_string):
+def f_s_t_f(string):
     result = ""
-    for element in m_string:
+    for element in string:
         result += str(alphabet_dictionary[element])
     return int(result)
+
+
+if __name__ == '__main__':
+    s = 'jhgfdkhgv'
+    print(s)
+    print(get_substring(s))
