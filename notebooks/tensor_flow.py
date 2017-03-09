@@ -13,31 +13,6 @@ n_attr = 64
 
 n_class = 10
 
-'''
-X_train = np.array([[223113, 311311], [131129, 112911],
-                    [132528, 252811], [221128, 112811],
-                    [132815, 281511], [132529, 252911],
-                    [222513, 251311], [221913, 191311],
-                    [221524, 152411], [131524, 152411],
-                    [131528, 152811], [222222, 222222],
-                    [131313, 131313], [131113, 111311],
-                    [222522, 252225], [221931, 193130],
-                    [221130, 113030], [132513, 251313],
-                    [132513, 251325], [132815, 281523],
-                    [131129, 112914]]).astype('int32')
-y_train = np.array([[1,0],[0,1],
-                    [0,1],[1,0],
-                    [0,1],[0,1],
-                    [1,0],[1,0],
-                    [1,0],[0,1],
-                    [0,1],[1,0],
-                    [0,1],[0,1],
-                    [1,0],[1,0],
-                    [1,0],[0,1],
-                    [0,1],[0,1],
-                    [0,1]]).astype('int32')
-print(X_train)
-print(y_train)'''
 from sklearn import datasets
 digits = datasets.load_digits()
 X_train = digits.data
@@ -69,36 +44,26 @@ print(len(X_train[0]))
 #print(np.array(y_train_new).astype('int32'))
 
 x = tf.placeholder("float", [None, n_attr])
-print(x)
-
 y = tf.placeholder("float", [None, n_class])
-print(y)
 
 W = tf.Variable(tf.zeros([n_attr, n_class]))
-print(W)
 
 b = tf.Variable(tf.zeros([n_class]))
 evidence = tf.matmul(x, W) + b
-evidence
 
 activation = tf.nn.softmax(tf.matmul(x, W) + b)
-print(activation)
 
 cross_entropy = (y*tf.log(activation+1))
-print(cross_entropy)
 
 cost = tf.reduce_mean(-tf.reduce_sum(cross_entropy, reduction_indices=1))
-print(cost)
 
 optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-print(optimizer)
 
 avg_set = []
 
 epoch_set=[]
 
 init = tf.global_variables_initializer()
-print(init)
 
 with tf.Session() as sess:
     sess.run(init)
