@@ -115,6 +115,7 @@ def main():
 
     X_test = np.asarray([my_ml_input.test_data])
     print(X_test.shape)
+
     X_test_mod = []
     for seq in range(0, len(X_test[0])):
         row = X_test[0][seq]
