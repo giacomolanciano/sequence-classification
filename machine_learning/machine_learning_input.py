@@ -38,10 +38,10 @@ class MachineLearningInput(object):
         self.train_data, self.test_data, self.train_labels, self.test_labels \
             = train_test_split(pad_data, transformed_label, test_size=size, random_state=random_state)
 
-        if self.progress:
-            for item, label in zip(self.train_data, self.train_labels):
-                print(item)
-                print(label)
+        # if self.progress:
+        #     for item, label in zip(self.train_data, self.train_labels):
+                # print(item)
+                # print(label)
 
     def _get_data_and_labels_by_labels(self, labels):
         train_test_matrix = []
