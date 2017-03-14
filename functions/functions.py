@@ -15,7 +15,6 @@ def p_spectrum_kernel_function(string1, string2):
                         kernel += 1
             row.append(kernel)
         kernel_matrix.append(row)
-    #print(kernel_matrix)
     return kernel_matrix
 
 
