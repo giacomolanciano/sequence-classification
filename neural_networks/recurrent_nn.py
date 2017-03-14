@@ -78,10 +78,10 @@ class SequenceClassification:
 
 def main(considered_labels, input_size):
     # retrieve input data from database
-    ml_input = ClassifierInput(input_size=input_size)
-    ml_input.set_train_test_data(considered_labels)
+    clf_input = ClassifierInput(input_size=input_size)
+    clf_input.set_train_test_data(considered_labels)
 
-    # create label-to-vector translation
+    # create label-to-vector translation structure
     labels_vectors = []
     num_labels = len(considered_labels)
     for i in range(num_labels):
@@ -89,11 +89,11 @@ def main(considered_labels, input_size):
         label_vector[i] = 1
         labels_vectors.append(label_vector)
 
-    x_train = _format_data_matrix(ml_input.train_data)
-    y_train = np.asarray([labels_vectors[i] for i in ml_input.train_labels])
+    x_train = _format_data_matrix(clf_input.train_data)
+    y_train = np.asarray([labels_vectors[i] for i in clf_input.train_labels])
 
-    x_test = _format_data_matrix(ml_input.test_data)
-    y_test = np.asarray([labels_vectors[i] for i in ml_input.test_labels])
+    x_test = _format_data_matrix(clf_input.test_data)
+    y_test = np.asarray([labels_vectors[i] for i in clf_input.test_labels])
 
     # initialize tensorflow
     _, rows, row_size = x_train.shape
@@ -115,7 +115,7 @@ def main(considered_labels, input_size):
 
         # compute step error
         error = sess.run(model.error, {data: x_test, target: y_test, dropout: 0.5})
-        error_percentage = 100*error
+        error_percentage = 100 * error
         print('Epoch {:2d} \n\taccuracy {:3.1f} \n\terror {:3.1f}%'
               .format(epoch + 1, 100 - error_percentage, error_percentage))
 

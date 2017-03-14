@@ -53,4 +53,3 @@ def pad_data(X_train):
 
 if __name__ == '__main__':
     s = 'jhgfdkhgv'
-

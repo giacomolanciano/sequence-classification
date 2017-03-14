@@ -63,5 +63,5 @@ class ClassifierInput(object):
 
 
 if __name__ == '__main__':
-    my_ml_input = ClassifierInput()
-    my_ml_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
+    clf_input = ClassifierInput()
+    clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
