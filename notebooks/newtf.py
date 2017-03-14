@@ -3,6 +3,7 @@ import sets
 import tensorflow as tf
 import numpy as np
 from machine_learning.machine_learning_input import *
+import tensorflow.contrib.slim as slim
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -55,14 +56,17 @@ class SequenceClassification:
 
     @lazy_property
     def cost(self):
-        cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
+        #cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
+        #cross_entropy = slim.losses.mean_squared_error(self.prediction, self.target)
+        cross_entropy = slim.losses.hinge_loss(self.prediction, self.target)
         print('cross_entropy %s' % cross_entropy)
         return cross_entropy
 
     @lazy_property
     def optimize(self):
         learning_rate = 0.003
-        optimizer = tf.train.RMSPropOptimizer(learning_rate)
+        #optimizer = tf.train.RMSPropOptimizer(learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate)
         print('optimizer %s' % optimizer)
         return optimizer.minimize(self.cost)
 
@@ -147,9 +151,9 @@ def main():
 
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
-    for epoch in range(10):
+    for epoch in range(25):
         for _ in range(100):
-            rand_index = np.random.choice(len(X_train), 200)
+            rand_index = np.random.choice(len(X_train), 2950)
             batch_xs = np.asarray(X_train[rand_index])
             batch_ys = y_train[rand_index]
             sess.run(model.optimize, {

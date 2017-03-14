@@ -6,7 +6,7 @@ from utils import persistence
 
 
 class MachineLearningInput(object):
-    def __init__(self, input_size=100, progress=True):
+    def __init__(self, input_size=1000, progress=True):
         self.progress = progress
         self.input_size = input_size
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size = None, None, None, None,None
