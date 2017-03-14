@@ -1,6 +1,7 @@
 from functions.functions import *
 from sklearn import svm
-from machine_learning.machine_learning_input import *
+from machine_learning.classifier_input import ClassifierInput
+import numpy as np
 import time
 
 # X = ["LUCA", "CASA", "CORA", "LARA", "CREA", "COSA", "LOCA", "LICA", "LENA", "CENA", "CERA", "LLLL", "CCCC", "CACA",
@@ -63,7 +64,7 @@ import time
 # print(Y_test)
 # print(clf.predict(Y_test))
 
-my_ml_input = MachineLearningInput(input_size=10)  # to speed up testing
+my_ml_input = ClassifierInput(input_size=10)  # to speed up testing
 my_ml_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
 
 clf = svm.SVC(kernel=p_spectrum_kernel_function)
