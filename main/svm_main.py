@@ -10,6 +10,13 @@ clf_input = ClassifierInput(input_size=10)  # to speed up testing
 clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE'])
 
 clf = svm.SVC(kernel=p_spectrum_kernel_function)
+
+
+# from sklearn import model_selection
+# d = {'C': [1, 10]}
+# gd = model_selection.GridSearchCV(d, clf)
+
+
 start_time = time.time()
 clf.fit(clf_input.train_data, np.asarray(clf_input.train_labels))
 accuracy = clf.score(clf_input.test_data, clf_input.test_labels)
