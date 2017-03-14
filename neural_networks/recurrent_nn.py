@@ -1,10 +1,10 @@
 import functools
 import tensorflow as tf
-import matplotlib.pyplot as plt
 from machine_learning.classifier_input import ClassifierInput
+import tensorflow.contrib.slim as slim
 import numpy as np
 
-EPOCH_NUM = 50
+EPOCH_NUM = 25
 
 
 def lazy_property(function):
@@ -20,7 +20,7 @@ def lazy_property(function):
 
 
 class SequenceClassification:
-    def __init__(self, data, target, dropout, num_hidden=500, num_layers=10):
+    def __init__(self, data, target, dropout, num_hidden=200, num_layers=3):
         self.data = data
         self.target = target
         self.dropout = dropout
@@ -34,8 +34,10 @@ class SequenceClassification:
     @lazy_property
     def prediction(self):
         # Recurrent network.
-        network = tf.contrib.rnn.BasicLSTMCell(self._num_hidden)
+        network = tf.contrib.rnn.GRUCell(self._num_hidden)
         network = tf.contrib.rnn.DropoutWrapper(network, output_keep_prob=self.dropout)
+        network = tf.contrib.rnn.MultiRNNCell([network] * self._num_layers)
+
         output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32)
 
         # Select last output.
@@ -50,14 +52,14 @@ class SequenceClassification:
 
     @lazy_property
     def cost(self):
-        cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
-        #cross_entropy = slim.losses.mean_squared_error(self.prediction, self.target)
-        #cross_entropy = slim.losses.hinge_loss(self.prediction, self.target)
+        # cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
+        # cross_entropy = slim.losses.mean_squared_error(self.prediction, self.target)
+        cross_entropy = slim.losses.hinge_loss(self.prediction, self.target)
         return cross_entropy
 
     @lazy_property
     def optimize(self):
-        learning_rate = 0.01
+        learning_rate = 0.003
         # optimizer = tf.train.RMSPropOptimizer(learning_rate)
         optimizer = tf.train.AdamOptimizer(learning_rate)
         return optimizer.minimize(self.cost)
@@ -76,10 +78,10 @@ class SequenceClassification:
 
 def main(considered_labels, input_size):
     # retrieve input data from database
-    ml_input = ClassifierInput(input_size=input_size)
-    ml_input.set_train_test_data(considered_labels)
+    clf_input = ClassifierInput(input_size=input_size)
+    clf_input.set_train_test_data(considered_labels)
 
-    # create label-to-vector translation
+    # create label-to-vector translation structure
     labels_vectors = []
     num_labels = len(considered_labels)
     for i in range(num_labels):
@@ -87,11 +89,11 @@ def main(considered_labels, input_size):
         label_vector[i] = 1
         labels_vectors.append(label_vector)
 
-    x_train = _format_data_matrix(ml_input.train_data)
-    y_train = np.asarray([labels_vectors[i] for i in ml_input.train_labels])
+    x_train = _format_data_matrix(clf_input.train_data)
+    y_train = np.asarray([labels_vectors[i] for i in clf_input.train_labels])
 
-    x_test = _format_data_matrix(ml_input.test_data)
-    y_test = np.asarray([labels_vectors[i] for i in ml_input.test_labels])
+    x_test = _format_data_matrix(clf_input.test_data)
+    y_test = np.asarray([labels_vectors[i] for i in clf_input.test_labels])
 
     # initialize tensorflow
     _, rows, row_size = x_train.shape
@@ -105,23 +107,18 @@ def main(considered_labels, input_size):
     sess.run(tf.global_variables_initializer())
     train_size = len(x_train)
     indices_num = int(train_size - (0.15 * train_size))
-    err = []
     for epoch in range(EPOCH_NUM):
         rand_index = np.random.choice(train_size, indices_num)
         batch_xs = np.asarray(x_train[rand_index])
         batch_ys = y_train[rand_index]
-        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.4})
+        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 1})
 
         # compute step error
-        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 0.4})
-        error_percentage = 100*error
-        err.append(error)
-        print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
+        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 0.5})
+        error_percentage = 100 * error
+        print('Epoch {:2d} \n\taccuracy {:3.1f} \n\terror {:3.1f}%'
               .format(epoch + 1, 100 - error_percentage, error_percentage))
-    plt.figure(1)
-    plt.plot([x for x in range(1, EPOCH_NUM+1)], err)
-    plt.axis([1, 10, 0, 1.2])
-    plt.show()
+
 
 def _format_data_matrix(data):
     """
@@ -139,4 +136,4 @@ def _format_data_matrix(data):
 
 
 if __name__ == '__main__':
-    main(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'], 1000)
+    main(['TRANSCRIPTION', 'LYASE'], 1000)
