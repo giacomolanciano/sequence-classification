@@ -68,19 +68,19 @@ class SequenceClassifierInput(object):
         # get training pairs from database
         data, labels = self._get_training_inputs_by_labels(considered_labels)
 
-        # apply shingling on data
-        data = [SequenceClassifierInput.get_substring(item) for item in data]
-        transformed_data = []
+        # apply shingling on data, each item becomes a shingles list
+        data = [SequenceClassifierInput._get_substring(item) for item in data]
 
         # transform chars sequences in int sequences
-        for sequence in data:
+        encoded_data = []
+        for shingle_list in data:
             transformed_sequence = []
-            for shingle in sequence:
-                transformed_sequence.append(SequenceClassifierInput.encode_sequence(shingle))
-            transformed_data.append(transformed_sequence)
+            for shingle in shingle_list:
+                transformed_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
+            encoded_data.append(transformed_sequence)
 
-        # pad sequences looking at the maximum length
-        pad_data = SequenceClassifierInput.pad_shingles_lists(transformed_data)
+        # pad shingles lists looking at the maximum length
+        pad_data = SequenceClassifierInput._pad_shingles_lists(encoded_data)
         self.max_feature_size = len(pad_data[0])
 
         # translate labels in integers
@@ -104,7 +104,7 @@ class SequenceClassifierInput(object):
         return train_test_matrix[:, 0], train_test_matrix[:, 1]
 
     @staticmethod
-    def get_substring(string, spectrum=3):
+    def _get_substring(string, spectrum=3):
         if spectrum == 0:
             result = ['']
         elif len(string) <= spectrum:
@@ -114,14 +114,14 @@ class SequenceClassifierInput(object):
         return result
 
     @staticmethod
-    def encode_sequence(string):
+    def _encode_sequence(string):
         result = ''
         for element in string:
             result += str(ALPHABETH_DICT[element])
         return int(result)
 
     @staticmethod
-    def pad_shingles_lists(data):
+    def _pad_shingles_lists(data):
         max_length = len(max(data, key=len))
 
         # pad inputs with respect to max length
