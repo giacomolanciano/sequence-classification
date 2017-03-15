@@ -28,6 +28,7 @@ alphabet_dictionary = {"A": 0b10000000000000000000000000,
                        "Z": 0b00000000000000000000000001}
 #'{0:036b}'.format(1)
 
+
 def p_spectrum_kernel_function(string1, string2):
     kernel_matrix = []
     for ele1 in string1:
@@ -53,7 +54,7 @@ def get_substring(string, spectrum=3):
     return result
 
 
-def from_string_to_int(string):
+def encode_sequence(string):
     result = ''
     for element in string:
         result += str(alphabet_dictionary[element])

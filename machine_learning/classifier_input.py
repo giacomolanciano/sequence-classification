@@ -35,7 +35,7 @@ class ClassifierInput(object):
         for sequence in data:
             transformed_sequence = []
             for shingle in sequence:
-                transformed_sequence.append(functions.from_string_to_int(shingle))
+                transformed_sequence.append(functions.encode_sequence(shingle))
             transformed_data.append(transformed_sequence)
 
         # pad sequences looking at the maximum length
