@@ -1,5 +1,3 @@
-from wheel.signatures.djbec import bit
-
 alphabet_dictionary = {"A": 0b10000000000000000000000000,
                        "B": 0b01000000000000000000000000,
                        "C": 0b00100000000000000000000000,
@@ -26,7 +24,6 @@ alphabet_dictionary = {"A": 0b10000000000000000000000000,
                        "X": 0b00000000000000000000000100,
                        "Y": 0b00000000000000000000000010,
                        "Z": 0b00000000000000000000000001}
-#'{0:036b}'.format(1)
 
 
 def p_spectrum_kernel_function(string1, string2):
