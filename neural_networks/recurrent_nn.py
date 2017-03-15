@@ -1,7 +1,7 @@
 import functools
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from machine_learning.classifier_input import ClassifierInput
+from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 
 EPOCH_NUM = 50
@@ -82,7 +82,7 @@ class SequenceClassification:
 
 def main(considered_labels, input_size):
     # retrieve input data from database
-    clf_input = ClassifierInput(input_size=input_size)
+    clf_input = SequenceClassifierInput(input_size=input_size)
     clf_input.set_train_test_data(considered_labels)
 
     # create label-to-vector translation structure

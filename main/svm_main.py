@@ -2,14 +2,14 @@ from sklearn import svm
 import numpy as np
 import time
 
-from functions.functions import p_spectrum_kernel_function
-from machine_learning.classifier_input import ClassifierInput
+from machine_learning.sequence_classifier import spectrum_kernel
+from machine_learning.sequence_classifier import SequenceClassifierInput
 
 
-clf_input = ClassifierInput(input_size=10)  # to speed up testing
+clf_input = SequenceClassifierInput(input_size=10)  # to speed up testing
 clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE'])
 
-clf = svm.SVC(kernel=p_spectrum_kernel_function)
+clf = svm.SVC(kernel=spectrum_kernel)
 
 
 # from sklearn import model_selection
