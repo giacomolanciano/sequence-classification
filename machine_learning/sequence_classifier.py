@@ -32,17 +32,27 @@ ALPHABETH_DICT = {"A": 0b10000000000000000000000000,
 
 
 def spectrum_kernel(string1, string2):
-    kernel_matrix = []
-    for ele1 in string1:
-        row = []
-        for ele2 in string2:
+    kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
+
+    for row, ele1 in enumerate(string1):
+        # print('ele1: ' + str(ele1))
+        for col in range(row, len(string2)):
+            ele2 = string2[col]
+            # print('ele2: ' + str(ele2))
             kernel = 0
             for i in ele1:
+                # print('i: ' + str(i))
                 for j in ele2:
+                    # print('j: ' + str(j))
                     if i == j and i != 0:
                         kernel += 1
-            row.append(kernel)
-        kernel_matrix.append(row)
+            # print('kernel(%d,%d): %d' % (row, col, kernel))
+            kernel_matrix[row][col] = kernel
+            kernel_matrix[col][row] = kernel
+
+    # for row in kernel_matrix:
+    #     print(row)
+
     return kernel_matrix
 
 
