@@ -80,6 +80,21 @@ class SequenceClassification:
         return tf.Variable(weight), tf.Variable(bias)
 
 
+def _format_data_matrix(data):
+    """
+    Give the data matrix the right shape for being given as input to recurrent NN.
+    :param data: a list of input data.
+    :return: the formatted data matrix
+    """
+    data_matrix = np.asarray([data])
+    transformed_data_matrix = []
+    for seq in range(0, len(data_matrix[0])):
+        row = data_matrix[0][seq]
+        row = np.asarray([row])
+        transformed_data_matrix.append(row)
+    return np.asarray(transformed_data_matrix)
+
+
 def main(considered_labels, input_size):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(input_size=input_size)
@@ -130,21 +145,6 @@ def main(considered_labels, input_size):
     plt.plot([x for x in range(1, EPOCH_NUM + 1)], err)
     plt.axis([1, 10, 0, 1.2])
     plt.show()
-
-
-def _format_data_matrix(data):
-    """
-    Give the data matrix the right shape for being given as input to recurrent NN.
-    :param data: a list of input data.
-    :return: the formatted data matrix
-    """
-    data_matrix = np.asarray([data])
-    transformed_data_matrix = []
-    for seq in range(0, len(data_matrix[0])):
-        row = data_matrix[0][seq]
-        row = np.asarray([row])
-        transformed_data_matrix.append(row)
-    return np.asarray(transformed_data_matrix)
 
 
 if __name__ == '__main__':
