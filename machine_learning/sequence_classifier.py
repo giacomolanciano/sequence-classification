@@ -35,23 +35,18 @@ def spectrum_kernel(string1, string2):
     kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
 
     for row, ele1 in enumerate(string1):
-        # print('ele1: ' + str(ele1))
         for col in range(row, len(string2)):
             ele2 = string2[col]
-            # print('ele2: ' + str(ele2))
             kernel = 0
             for i in ele1:
-                # print('i: ' + str(i))
                 for j in ele2:
-                    # print('j: ' + str(j))
                     if i == j and i != 0:
                         kernel += 1
-            # print('kernel(%d,%d): %d' % (row, col, kernel))
             kernel_matrix[row][col] = kernel
             kernel_matrix[col][row] = kernel
 
-    # for row in kernel_matrix:
-    #     print(row)
+    for row in kernel_matrix:
+        print(row)
 
     return kernel_matrix
 
@@ -142,5 +137,8 @@ class SequenceClassifierInput(object):
 
 
 if __name__ == '__main__':
-    clf_input = SequenceClassifierInput()
-    clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
+    s1 = 'LUCAMARCHETTI'
+    s2 = 'LEONARDOMARTI'
+    x = [s1, s2]
+
+    spectrum_kernel(x, x)
