@@ -34,21 +34,15 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
 
 def naive_spectrum_kernel(string1, string2):
     kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
-
-    for row, ele1 in enumerate(string1):
+    for row, shingles_list_1 in enumerate(string1):
         for col in range(row, len(string2)):
-            ele2 = string2[col]
+            shingles_list_2 = string2[col]
             kernel = 0
-            for i in ele1:
-                for j in ele2:
-                    if i == j and i != 0:
-                        kernel += 1
+            for shingle in shingles_list_1:
+                if shingle != 0 and shingle in shingles_list_2:
+                    kernel += 1
             kernel_matrix[row][col] = kernel
             kernel_matrix[col][row] = kernel
-
-    for row in kernel_matrix:
-        print(row)
-
     return kernel_matrix
 
 
@@ -147,4 +141,6 @@ if __name__ == '__main__':
     s2 = 'LEONARDOMARTI'
     x = [s1, s2]
 
-    naive_spectrum_kernel(x, x)
+    km = naive_spectrum_kernel(x, x)
+    for km_row in km:
+        print(km_row)
