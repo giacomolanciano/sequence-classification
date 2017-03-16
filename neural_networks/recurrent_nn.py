@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 
-EPOCH_NUM = 50
-LEARNING_RATE = 0.003
+EPOCH_NUM = 150
+LEARNING_RATE = 0.01
 
 
 def lazy_property(function):
@@ -125,25 +125,26 @@ def main(considered_labels, input_size):
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
     train_size = len(x_train)
-    indices_num = int(train_size - (0.15 * train_size))
+    indices_num = int(train_size - (0.25 * train_size))
     err = []
 
     for epoch in range(EPOCH_NUM):
         rand_index = np.random.choice(train_size, indices_num)
         batch_xs = np.asarray(x_train[rand_index])
         batch_ys = y_train[rand_index]
-        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
+        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.4})
 
         # compute step error
-        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 1})
+        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 0.4})
         error_percentage = 100 * error
+        err.append(error)
         print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
               .format(epoch + 1, 100 - error_percentage, error_percentage))
 
     # plot error function
     plt.figure(1)
-    plt.plot([x for x in range(1, EPOCH_NUM + 1)], err)
-    plt.axis([1, 10, 0, 1.2])
+    plt.plot([x for x in range(1, EPOCH_NUM+1)], err)
+    plt.axis([1, EPOCH_NUM, 0, 1])
     plt.show()
 
 
