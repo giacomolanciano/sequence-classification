@@ -33,17 +33,22 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
 
 
 def spectrum_kernel(string1, string2):
-    kernel_matrix = []
-    for ele1 in string1:
-        row = []
-        for ele2 in string2:
+    kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
+
+    for row, ele1 in enumerate(string1):
+        for col in range(row, len(string2)):
+            ele2 = string2[col]
             kernel = 0
             for i in ele1:
                 for j in ele2:
                     if i == j and i != 0:
                         kernel += 1
-            row.append(kernel)
-        kernel_matrix.append(row)
+            kernel_matrix[row][col] = kernel
+            kernel_matrix[col][row] = kernel
+
+    for row in kernel_matrix:
+        print(row)
+
     return kernel_matrix
 
 
@@ -131,5 +136,8 @@ class SequenceClassifierInput(object):
 
 
 if __name__ == '__main__':
-    clf_input = SequenceClassifierInput()
-    clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE', 'SIGNALING PROTEIN'])
+    s1 = 'LUCAMARCHETTI'
+    s2 = 'LEONARDOMARTI'
+    x = [s1, s2]
+
+    spectrum_kernel(x, x)
