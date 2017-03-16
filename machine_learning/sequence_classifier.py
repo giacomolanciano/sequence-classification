@@ -32,7 +32,7 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
                     'Z': '00000000000000000000000001'}
 
 
-def spectrum_kernel(string1, string2):
+def naive_spectrum_kernel(string1, string2):
     kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
 
     for row, ele1 in enumerate(string1):
@@ -50,6 +50,13 @@ def spectrum_kernel(string1, string2):
         print(row)
 
     return kernel_matrix
+
+
+def spectrum_kernel():
+    # TODO
+    # it will implement the spectrum kernel algorithm depicted in
+    # "THE SPECTRUM KERNEL: A STRING KERNEL FOR SVM PROTEIN CLASSIFICATION"
+    pass
 
 
 class SequenceClassifierInput(object):
@@ -140,4 +147,4 @@ if __name__ == '__main__':
     s2 = 'LEONARDOMARTI'
     x = [s1, s2]
 
-    spectrum_kernel(x, x)
+    naive_spectrum_kernel(x, x)
