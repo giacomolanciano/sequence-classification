@@ -1,22 +1,12 @@
+from datetime import timedelta
+
 from sklearn import svm
 from sklearn import model_selection
-from sklearn.model_selection import StratifiedKFold
 import numpy as np
 import time
 
 from machine_learning.sequence_classifier import occurrence_dict_spectrum_kernel
 from machine_learning.sequence_classifier import SequenceClassifierInput
-
-
-def print_time(seconds):
-    result = '\n'
-    if seconds < 60:
-        result += 'Time: {:3.2f} seconds'.format(seconds)
-    elif (seconds >= 60) and (seconds < 3600):
-        result += 'Time: {:3.2f} minutes'.format(seconds / 60)
-    else:
-        result += 'Time: {:3.2f} hours'.format(seconds / 3600)
-    print(result)
 
 
 clf = svm.SVC(kernel='precomputed')
@@ -36,10 +26,12 @@ kernel_matrix_train = np.asarray(occurrence_dict_spectrum_kernel(inputs_data, in
 
 # cross validation
 param_grid = {'C': [1, 10]}
-gd = model_selection.GridSearchCV(clf, param_grid=param_grid, cv=StratifiedKFold(n_splits=10))
-gd.fit(kernel_matrix_train, inputs_labels)
-print('Best params:   %s' % gd.best_params_)
-print('Best accuracy: {:3.2f}%'.format(100 * gd.best_score_))
+grid = model_selection.GridSearchCV(clf, param_grid=param_grid, cv=10)
+grid.fit(kernel_matrix_train, inputs_labels)
 
-elapsed = (time.time() - start_time)
-print_time(elapsed)
+elapsed_time = (time.time() - start_time)
+
+# print stats
+print('Best params:   %s' % grid.best_params_)
+print('Best accuracy: {:3.2f}%'.format(100 * grid.best_score_))
+print('Time: ', timedelta(seconds=elapsed_time))

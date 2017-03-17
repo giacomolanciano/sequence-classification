@@ -1,7 +1,9 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 from collections import Counter
+
 from utils import persistence
+from utils.constants import PADDING_VALUE
 
 BASE_TWO = 2
 AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
@@ -34,17 +36,16 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
 
 def naive_spectrum_kernel(X, Y):
     kernel_matrix = []
-    for ele1 in X:
+    for shingles_list_1 in X:
         row = []
-        for ele2 in Y:
+        for shingles_list_2 in Y:
             kernel = 0
-            for i in ele1:
-                for j in ele2:
-                    if i == j and i != 0:
+            for shingle in shingles_list_1:
+                for j in shingles_list_2:
+                    if shingle != PADDING_VALUE and shingle == j:
                         kernel += 1
             row.append(kernel)
         kernel_matrix.append(row)
-    print(np.asarray(kernel_matrix).shape)
     return kernel_matrix
 
 
@@ -57,13 +58,13 @@ def occurrence_dict_spectrum_kernel(X, Y):
             kernel = 0
             shingles_list_2_dict = Counter(shingles_list_2)
             for shingle, occurrences in shingles_list_1_dict.items():
-                try:
-                    kernel += shingles_list_2_dict[shingle] * occurrences
-                except KeyError:
-                    continue
+                if shingle != PADDING_VALUE:
+                    try:
+                        kernel += shingles_list_2_dict[shingle] * occurrences
+                    except KeyError:
+                        continue
             row.append(kernel)
         kernel_matrix.append(row)
-    print(np.asarray(kernel_matrix).shape)
     return kernel_matrix
 
 
@@ -92,13 +93,13 @@ class SequenceClassifierInput(object):
         # apply shingling on data, each item becomes a shingles list
         data = [SequenceClassifierInput._get_substring(item) for item in data]
 
-        # transform chars sequences in int sequences
+        # transform string sequences into int sequences
         encoded_data = []
         for shingle_list in data:
-            transformed_sequence = []
+            encoded_sequence = []
             for shingle in shingle_list:
-                transformed_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
-            encoded_data.append(transformed_sequence)
+                encoded_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
+            encoded_data.append(encoded_sequence)
 
         # pad shingles lists looking at the maximum length
         pad_data = SequenceClassifierInput._pad_shingles_lists(encoded_data)
@@ -146,11 +147,5 @@ class SequenceClassifierInput(object):
         # pad inputs with respect to max length
         for shingle_list in data:
             padding_length = max_length - len(shingle_list)
-            shingle_list += [0] * padding_length
+            shingle_list += [PADDING_VALUE] * padding_length
         return data
-
-
-if __name__ == '__main__':
-    s1 = 'LUCAMARCHETTI'
-    s2 = 'LEONARDOMARTI'
-    x = [SequenceClassifierInput._get_substring(s1), SequenceClassifierInput._get_substring(s2)]
