@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
-
+from collections import Counter
 from utils import persistence
 
 BASE_TWO = 2
@@ -46,11 +46,24 @@ def naive_spectrum_kernel(string1, string2):
     return kernel_matrix
 
 
-def spectrum_kernel():
-    # TODO
-    # it will implement the spectrum kernel algorithm depicted in
-    # "THE SPECTRUM KERNEL: A STRING KERNEL FOR SVM PROTEIN CLASSIFICATION"
-    pass
+def dic_spectrum_kernel(X,Y):
+    kernel_matrix = [[0] * len(X) for _ in range(len(Y))]
+    for row, shingles_list_1 in enumerate(X):
+        shingles_list_1_dic = Counter(shingles_list_1)
+        for col in range(row, len(Y)):
+            shingles_list_2 = Y[col]
+            shingles_list_2_dic = Counter(shingles_list_2)
+            kernel = 0
+            for shingle,occ in shingles_list_1_dic.items():
+                try:
+                    kernel += shingles_list_2_dic[shingle]*occ
+                except KeyError:
+                    continue
+
+            kernel_matrix[row][col] = kernel
+            kernel_matrix[col][row] = kernel
+    return kernel_matrix
+
 
 
 class SequenceClassifierInput(object):
@@ -139,8 +152,8 @@ class SequenceClassifierInput(object):
 if __name__ == '__main__':
     s1 = 'LUCAMARCHETTI'
     s2 = 'LEONARDOMARTI'
-    x = [s1, s2]
+    x = [SequenceClassifierInput._get_substring(s1), SequenceClassifierInput._get_substring(s2)]
 
-    km = naive_spectrum_kernel(x, x)
+    km = dic_spectrum_kernel(x, x)
     for km_row in km:
         print(km_row)
