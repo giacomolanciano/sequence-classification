@@ -32,44 +32,45 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
                     'Z': '00000000000000000000000001'}
 
 
-def naive_spectrum_kernel(string1, string2):
-    kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
-    for row, shingles_list_1 in enumerate(string1):
-        for col in range(row, len(string2)):
-            shingles_list_2 = string2[col]
+def naive_spectrum_kernel(X, Y):
+    kernel_matrix = []
+    for ele1 in X:
+        row = []
+        for ele2 in Y:
             kernel = 0
-            for shingle in shingles_list_1:
-                if shingle != 0 and shingle in shingles_list_2:
-                    kernel += 1
-            kernel_matrix[row][col] = kernel
-            kernel_matrix[col][row] = kernel
+            for i in ele1:
+                for j in ele2:
+                    if i == j and i != 0:
+                        kernel += 1
+            row.append(kernel)
+        kernel_matrix.append(row)
+    print(np.asarray(kernel_matrix).shape)
     return kernel_matrix
 
 
-def dic_spectrum_kernel(X,Y):
-    kernel_matrix = [[0] * len(X) for _ in range(len(Y))]
-    for row, shingles_list_1 in enumerate(X):
-        shingles_list_1_dic = Counter(shingles_list_1)
-        for col in range(row, len(Y)):
-            shingles_list_2 = Y[col]
-            shingles_list_2_dic = Counter(shingles_list_2)
+def occurrence_dict_spectrum_kernel(X, Y):
+    kernel_matrix = []
+    for shingles_list_1 in X:
+        row = []
+        shingles_list_1_dict = Counter(shingles_list_1)
+        for shingles_list_2 in Y:
             kernel = 0
-            for shingle,occ in shingles_list_1_dic.items():
+            shingles_list_2_dict = Counter(shingles_list_2)
+            for shingle, occurrences in shingles_list_1_dict.items():
                 try:
-                    kernel += shingles_list_2_dic[shingle]*occ
+                    kernel += shingles_list_2_dict[shingle] * occurrences
                 except KeyError:
                     continue
-
-            kernel_matrix[row][col] = kernel
-            kernel_matrix[col][row] = kernel
+            row.append(kernel)
+        kernel_matrix.append(row)
+    print(np.asarray(kernel_matrix).shape)
     return kernel_matrix
-
 
 
 class SequenceClassifierInput(object):
-    def __init__(self, input_size=1000, progress=True):
+    def __init__(self, inputs_per_label=1000, progress=True):
         self.progress = progress
-        self.input_size = input_size
+        self.inputs_per_label = inputs_per_label
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size \
             = None, None, None, None, None
 
@@ -117,7 +118,7 @@ class SequenceClassifierInput(object):
         """
         train_test_matrix = []
         for label in labels:
-            label_table = persistence.get_training_inputs_by_label(label, limit=self.input_size)
+            label_table = persistence.get_training_inputs_by_label(label, limit=self.inputs_per_label)
             for row in label_table:
                 train_test_matrix.append(row)
         train_test_matrix = np.asarray(train_test_matrix)
@@ -153,7 +154,3 @@ if __name__ == '__main__':
     s1 = 'LUCAMARCHETTI'
     s2 = 'LEONARDOMARTI'
     x = [SequenceClassifierInput._get_substring(s1), SequenceClassifierInput._get_substring(s2)]
-
-    km = dic_spectrum_kernel(x, x)
-    for km_row in km:
-        print(km_row)

@@ -2,16 +2,14 @@ from sklearn import svm
 import numpy as np
 import time
 
-from machine_learning.sequence_classifier import naive_spectrum_kernel
+from machine_learning.sequence_classifier import occurrence_dict_spectrum_kernel
 from machine_learning.sequence_classifier import SequenceClassifierInput
-from machine_learning.sequence_classifier import dic_spectrum_kernel
 
 
-clf_input = SequenceClassifierInput(input_size=10)  # to speed up testing
+clf_input = SequenceClassifierInput(inputs_per_label=100)  # to speed up testing
 clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE'])
 
-clf = svm.SVC(kernel=dic_spectrum_kernel)
-
+clf = svm.SVC(kernel=occurrence_dict_spectrum_kernel)
 
 # from sklearn import model_selection
 # d = {'C': [1, 10]}

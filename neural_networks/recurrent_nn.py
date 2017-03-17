@@ -5,7 +5,7 @@ from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 
 EPOCH_NUM = 150
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.003
 
 
 def lazy_property(function):
@@ -21,6 +21,7 @@ def lazy_property(function):
         if not hasattr(self, attribute):
             setattr(self, attribute, function(self))
         return getattr(self, attribute)
+
     return wrapper
 
 
@@ -95,9 +96,9 @@ def _format_data_matrix(data):
     return np.asarray(transformed_data_matrix)
 
 
-def main(considered_labels, input_size):
+def main(considered_labels, inputs_per_label):
     # retrieve input data from database
-    clf_input = SequenceClassifierInput(input_size=input_size)
+    clf_input = SequenceClassifierInput(inputs_per_label=inputs_per_label)
     clf_input.set_train_test_data(considered_labels)
 
     # create label-to-vector translation structure
@@ -116,9 +117,11 @@ def main(considered_labels, input_size):
 
     # initialize tensorflow
     _, rows, row_size = x_train.shape
+
     data = tf.placeholder(tf.float32, [None, rows, row_size])
     target = tf.placeholder(tf.float32, [None, num_labels])
     dropout = tf.placeholder(tf.float32)
+
     model = SequenceClassification(data, target, dropout)
 
     # start session
@@ -132,10 +135,10 @@ def main(considered_labels, input_size):
         rand_index = np.random.choice(train_size, indices_num)
         batch_xs = np.asarray(x_train[rand_index])
         batch_ys = y_train[rand_index]
-        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.4})
+        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
 
         # compute step error
-        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 0.4})
+        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 1})
         error_percentage = 100 * error
         err.append(error)
         print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
@@ -143,7 +146,7 @@ def main(considered_labels, input_size):
 
     # plot error function
     plt.figure(1)
-    plt.plot([x for x in range(1, EPOCH_NUM+1)], err)
+    plt.plot([x for x in range(1, EPOCH_NUM + 1)], err)
     plt.axis([1, EPOCH_NUM, 0, 1])
     plt.show()
 
