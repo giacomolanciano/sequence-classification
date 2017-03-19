@@ -5,7 +5,7 @@ from sklearn import model_selection
 import numpy as np
 import time
 
-from machine_learning.sequence_classifier import occurrence_dict_spectrum_kernel
+from machine_learning.kernel_functions import occurrence_dict_spectrum_kernel
 from machine_learning.sequence_classifier import SequenceClassifierInput
 
 
