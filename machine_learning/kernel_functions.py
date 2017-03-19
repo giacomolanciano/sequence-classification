@@ -1,3 +1,4 @@
+""" Module containing various kernel functions for sequence classification problem. """
 from collections import Counter
 
 from machine_learning.sequence_classifier import SequenceClassifierInput
@@ -5,6 +6,12 @@ from utils.constants import PADDING_VALUE
 
 
 def naive_spectrum_kernel(rows_data, cols_data):
+    """
+    Compute the Spectrum Kernel matrix in a naive fashion (not feasible in practice).
+    :param rows_data: the list of data corresponding to the rows of the kernel matrix.
+    :param cols_data: the list of data corresponding to the columns of the kernel matrix.
+    :return: a list of list representing the kernel matrix.
+    """
     kernel_matrix = []
     for rows_shingles_list in rows_data:
         row = []
@@ -20,6 +27,13 @@ def naive_spectrum_kernel(rows_data, cols_data):
 
 
 def occurrence_dict_spectrum_kernel(rows_data, cols_data):
+    """
+    Compute the Spectrum Kernel matrix using an occurrences dictionary of each sequence shingles list (to improve
+    performances).
+    :param rows_data: the list of data corresponding to the rows of the kernel matrix.
+    :param cols_data: the list of data corresponding to the columns of the kernel matrix.
+    :return: a list of list representing the kernel matrix.
+    """
     kernel_matrix = []
     for rows_shingles_list in rows_data:
         row = []
@@ -39,6 +53,14 @@ def occurrence_dict_spectrum_kernel(rows_data, cols_data):
 
 
 def precomputed_occurrence_dict_spectrum_kernel(data):
+    """
+    Compute the Spectrum Kernel matrix using an occurrences dictionary of each sequence shingles list (to improve
+    performances). This specialized version of the algorithm assumes that the same dataset is used for both the rows and
+    the columns of the matrix. Therefore, the resulting kernel matrix is symmetric and performances can be further
+    improved (by computing only an "half" of it).
+    :param data: the list of data corresponding to both the rows and the columns of the kernel matrix.
+    :return: a list of list representing the kernel matrix.
+    """
     data_size = len(data)
     data_size_range = range(data_size)
     kernel_matrix = [[0] * data_size for _ in data_size_range]
