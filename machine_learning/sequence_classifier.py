@@ -1,7 +1,8 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
-from collections import Counter
+
 from utils import persistence
+from utils.constants import PADDING_VALUE
 
 BASE_TWO = 2
 AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
@@ -32,45 +33,10 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
                     'Z': '00000000000000000000000001'}
 
 
-def naive_spectrum_kernel(string1, string2):
-    kernel_matrix = [[0] * len(string1) for _ in range(len(string2))]
-    for row, shingles_list_1 in enumerate(string1):
-        for col in range(row, len(string2)):
-            shingles_list_2 = string2[col]
-            kernel = 0
-            for shingle in shingles_list_1:
-                if shingle != 0 and shingle in shingles_list_2:
-                    kernel += 1
-            kernel_matrix[row][col] = kernel
-            kernel_matrix[col][row] = kernel
-    return kernel_matrix
-
-
-def dic_spectrum_kernel(X,Y):
-    kernel_matrix = [[0] * len(X) for _ in range(len(Y))]
-    for row, shingles_list_1 in enumerate(X):
-        shingles_list_1_dic = Counter(shingles_list_1)
-        for col in range(row, len(Y)):
-            shingles_list_2 = Y[col]
-            shingles_list_2_dic = Counter(shingles_list_2)
-            kernel = 0
-            for shingle,occ in shingles_list_1_dic.items():
-                try:
-                    kernel += shingles_list_2_dic[shingle]*occ
-                except KeyError:
-                    continue
-
-            kernel_matrix[row][col] = kernel
-            kernel_matrix[col][row] = kernel
-    print(kernel_matrix)
-    return kernel_matrix
-
-
-
 class SequenceClassifierInput(object):
-    def __init__(self, input_size=1000, progress=True):
+    def __init__(self, inputs_per_label=1000, progress=True):
         self.progress = progress
-        self.input_size = input_size
+        self.inputs_per_label = inputs_per_label
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size \
             = None, None, None, None, None
 
@@ -92,13 +58,13 @@ class SequenceClassifierInput(object):
         # apply shingling on data, each item becomes a shingles list
         data = [SequenceClassifierInput._get_substring(item) for item in data]
 
-        # transform chars sequences in int sequences
+        # transform string sequences into int sequences
         encoded_data = []
         for shingle_list in data:
-            transformed_sequence = []
+            encoded_sequence = []
             for shingle in shingle_list:
-                transformed_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
-            encoded_data.append(transformed_sequence)
+                encoded_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
+            encoded_data.append(encoded_sequence)
 
         # pad shingles lists looking at the maximum length
         pad_data = SequenceClassifierInput._pad_shingles_lists(encoded_data)
@@ -118,7 +84,7 @@ class SequenceClassifierInput(object):
         """
         train_test_matrix = []
         for label in labels:
-            label_table = persistence.get_training_inputs_by_label(label, limit=self.input_size)
+            label_table = persistence.get_training_inputs_by_label(label, limit=self.inputs_per_label)
             for row in label_table:
                 train_test_matrix.append(row)
         train_test_matrix = np.asarray(train_test_matrix)
@@ -146,15 +112,5 @@ class SequenceClassifierInput(object):
         # pad inputs with respect to max length
         for shingle_list in data:
             padding_length = max_length - len(shingle_list)
-            shingle_list += [0] * padding_length
+            shingle_list += [PADDING_VALUE] * padding_length
         return data
-
-
-if __name__ == '__main__':
-    s1 = 'LUCAMARCHETTI'
-    s2 = 'LEONARDOMARTI'
-    x = [SequenceClassifierInput._get_substring(s1), SequenceClassifierInput._get_substring(s2)]
-
-    km = dic_spectrum_kernel(x, x)
-    for km_row in km:
-        print(km_row)
