@@ -81,9 +81,11 @@ def get_rows_by_label(label_name, table_name='protein', limit=None):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     if limit:
-        cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?', (label_name, limit))
+        #cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ? LIMIT ?', (label_name, limit))
+        cursor.execute('SELECT * FROM ' + table_name + ' WHERE label =  ? AND chain = ? LIMIT ?',(label_name, "A", limit))
     else:
-        cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+        #cursor.execute('SELECT * FROM ' + table_name + ' WHERE class_label =  ?', (label_name,))
+        cursor.execute('SELECT * FROM ' + table_name + ' WHERE label =  ? AND chain = ?', (label_name,"A"))
     table = cursor.fetchall()
     connection.close()
     return table
@@ -100,11 +102,16 @@ def get_training_inputs_by_label(label_name, table_name='protein', limit=None):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     if limit:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name +
-                       ' WHERE class_label =  ? ORDER BY RANDOM() LIMIT ?',
-                       (label_name, limit))
+        # cursor.execute('SELECT  sequence, class_label FROM ' + table_name +
+        #                ' WHERE class_label =  ? ORDER BY RANDOM() LIMIT ?',
+        #                (label_name, limit))
+        cursor.execute('SELECT  sequence, label FROM ' + table_name +
+                       ' WHERE label =  ? AND chain = ? ORDER BY RANDOM() LIMIT ?',
+                       (label_name,"A", limit))
     else:
-        cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? ORDER BY RANDOM()',
+        # cursor.execute('SELECT  sequence, class_label FROM ' + table_name + ' WHERE class_label =  ? ORDER BY RANDOM()',
+        #                (label_name,))
+        cursor.execute('SELECT  sequence, label FROM ' + table_name + ' WHERE label =  ? ORDER BY RANDOM()',
                        (label_name,))
     table = cursor.fetchall()
     connection.close()

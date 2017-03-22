@@ -11,6 +11,8 @@ from machine_learning.machine_learning_output import MachineLearningOutput
 from machine_learning.sequence_classifier import SequenceClassifierInput
 
 class_names = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT', 'LECTIN'] #OXIDOREDUCTASE,,TRANSCRIPTION
+class_names = ['ALPHA', 'BETA'] #OXIDOREDUCTASE,,TRANSCRIPTION
+
 
 clf = svm.SVC(kernel='precomputed')
 

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 
-EPOCH_NUM = 150
+EPOCH_NUM = 500
 LEARNING_RATE = 0.003
 
 
