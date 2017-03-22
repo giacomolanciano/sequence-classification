@@ -62,6 +62,7 @@ def dic_spectrum_kernel(X,Y):
 
             kernel_matrix[row][col] = kernel
             kernel_matrix[col][row] = kernel
+    print(kernel_matrix)
     return kernel_matrix
 
 
