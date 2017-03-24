@@ -34,17 +34,19 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
 
 
 class SequenceClassifierInput(object):
-    def __init__(self, inputs_per_label=1000, progress=True):
+    def __init__(self, table_name='protein', inputs_per_label=1000, spectrum=3, progress=True):
         self.progress = progress
+        self.table_name = table_name
         self.inputs_per_label = inputs_per_label
+        self.spectrum = spectrum
         self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size \
             = None, None, None, None, None
 
-    def set_train_test_data(self, considered_labels, size=0.25, random_state=42):
+    def set_train_test_data(self, considered_labels, test_size=0.25, random_state=42):
         """
         Create training and test sets for prediction model.
         :param considered_labels: the list of relevant labels.
-        :param size: the percentage of input to be used as test set.
+        :param test_size: the percentage of input to be used as test set.
         :param random_state: the random state.
         """
         # create label-to-int translation
@@ -56,7 +58,7 @@ class SequenceClassifierInput(object):
         data, labels = self._get_training_inputs_by_labels(considered_labels)
 
         # apply shingling on data, each item becomes a shingles list
-        data = [SequenceClassifierInput._get_substring(item) for item in data]
+        data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
 
         # transform string sequences into int sequences
         encoded_data = []
@@ -74,7 +76,7 @@ class SequenceClassifierInput(object):
         labels = [labels_dict[label] for label in labels]
 
         self.train_data, self.test_data, self.train_labels, self.test_labels \
-            = train_test_split(pad_data, labels, test_size=size, random_state=random_state)
+            = train_test_split(pad_data, labels, test_size=test_size, random_state=random_state)
 
     def _get_training_inputs_by_labels(self, labels):
         """
@@ -84,7 +86,8 @@ class SequenceClassifierInput(object):
         """
         train_test_matrix = []
         for label in labels:
-            label_table = persistence.get_training_inputs_by_label(label, limit=self.inputs_per_label)
+            label_table = persistence.get_training_inputs_by_label(label, table_name=self.table_name,
+                                                                   limit=self.inputs_per_label)
             for row in label_table:
                 train_test_matrix.append(row)
         train_test_matrix = np.asarray(train_test_matrix)
