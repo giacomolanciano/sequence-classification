@@ -18,12 +18,12 @@ clf = svm.SVC(kernel='precomputed')
 
 # build training and test splits
 print('Loading dataset...')
-clf_input = SequenceClassifierInput(table_name='protein', inputs_per_label=100, spectrum=3)
+clf_input = SequenceClassifierInput(table_name='protein', inputs_per_label=200, spectrum=3)
 clf_input.set_train_test_data(CONSIDERED_CLASSES)
 
 # merge splits (k-folding and cross validation will be performed)
-inputs_data = clf_input.train_data + clf_input.test_data
-inputs_labels = np.asarray(clf_input.train_labels + clf_input.test_labels)
+inputs_data = clf_input.train_data
+inputs_labels = np.asarray(clf_input.train_labels)
 
 start_time = time.time()
 
@@ -33,7 +33,7 @@ kernel_matrix_train = np.asarray(precomputed_occurrence_dict_spectrum_kernel(inp
 
 # cross validation
 print('Performing k-fold cross validation...')
-param_grid = {'C': [1, 10]}
+param_grid = {'C': [0.0001, 0.001, 0.01, 0.1, 1, 10]}
 grid = model_selection.GridSearchCV(estimator=clf, param_grid=param_grid, cv=10)
 grid.fit(kernel_matrix_train, inputs_labels)
 
