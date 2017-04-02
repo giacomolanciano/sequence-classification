@@ -12,7 +12,7 @@ def insert_protein(pdb_id, sequence, class_label):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
     try:
-        cursor.execute('''INSERT INTO protein_dupl VALUES (?,?,?)''', (pdb_id, sequence, class_label))
+        cursor.execute('''INSERT INTO protein_dupl VALUES (?)''', (pdb_id,))
         cursor.execute('''INSERT INTO protein VALUES (?,?,?)''', (pdb_id, sequence, class_label))
     except sqlite3.IntegrityError as err:
         print(err)
@@ -111,23 +111,6 @@ def get_training_inputs_by_label(label_name, table_name='protein', limit=None):
     return table
 
 
-def _filter_in_label_duplicates():
-    """
-    Pass data into new table to filter in-label duplicates.
-    """
-    connection = sqlite3.connect(DATABASE)
-    cursor1 = connection.cursor()
-    cursor1.execute('''SELECT * FROM protein_dupl''')
-    for row in cursor1:
-        cursor2 = connection.cursor()
-        try:
-            cursor2.execute('''INSERT INTO protein VALUES (?,?,?)''', (row[0], row[1], row[2]))
-        except sqlite3.IntegrityError as err:
-            print(err)
-    connection.commit()
-    connection.close()
-
-
 if __name__ == '__main__':
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
@@ -135,17 +118,8 @@ if __name__ == '__main__':
     # Create tables
     c.execute('''CREATE TABLE IF NOT EXISTS protein (pdb_id, sequence, class_label, bases_sequence,
               PRIMARY KEY(sequence, class_label))''')
-    c.execute('''CREATE TABLE IF NOT EXISTS protein_dupl (pdb_id PRIMARY KEY, sequence, class_label)''')
-
-    # Show tables
-    # c.execute("SELECT * FROM protein")
-    # for r in c:
-    #     print(r)
-
-    # print(get_data_by_label('HYDROLASE'))
-    # print(get_sequence_label_data_by_label('HYDROLASE'))
-
-    # _fill_bases_sequence_fields()
+    c.execute('''CREATE TABLE IF NOT EXISTS protein_secondary (pdb_id, sequence, class_label, bases_sequence, chain)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS protein_dupl (pdb_id PRIMARY KEY)''')
 
     # Save (commit) the changes
     conn.commit()
