@@ -3,6 +3,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
+from neural_networks import tf_glove
 
 EPOCH_NUM = 500
 LEARNING_RATE = 0.003
@@ -151,4 +152,11 @@ def main(considered_labels, inputs_per_label):
 
 
 if __name__ == '__main__':
-    main(['TRANSCRIPTION', 'LYASE'], 1000)
+    # main(['TRANSCRIPTION', 'LYASE'], 1000)
+
+    clf_input = SequenceClassifierInput(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
+    model = tf_glove.GloVeModel(embedding_size=300, context_size=10)
+    model.fit_to_corpus(clf_input.train_data)
+    model.train(num_epochs=100)
+
+    model.embedding_for(clf_input.train_data[0])
