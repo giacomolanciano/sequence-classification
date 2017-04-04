@@ -1,5 +1,4 @@
 from sklearn.model_selection import train_test_split
-import numpy as np
 
 from utils import persistence
 from utils.constants import PADDING_VALUE
@@ -14,7 +13,7 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
                     'G': '00000010000000000000000000',
                     'H': '00000001000000000000000000',
                     'I': '00000000100000000000000000',
-                    'J': '00000000010000000000000000',
+                    'J': '00000000010000000000000000',  # never occurs
                     'K': '00000000001000000000000000',
                     'L': '00000000000100000000000000',
                     'M': '00000000000010000000000000',
@@ -34,28 +33,28 @@ AMINO_ACIDS_DICT = {'A': '10000000000000000000000000',
 
 
 class SequenceClassifierInput(object):
-    def __init__(self, table_name='protein', inputs_per_label=1000, spectrum=3, progress=True):
+    def __init__(self, considered_labels, table_name='protein', inputs_per_label=1000, spectrum=3, test_size=0.25,
+                 random_state=42, progress=True):
         self.progress = progress
+        self.considered_labels = considered_labels
         self.table_name = table_name
         self.inputs_per_label = inputs_per_label
         self.spectrum = spectrum
-        self.train_data, self.test_data, self.train_labels, self.test_labels, self.max_feature_size \
-            = None, None, None, None, None
+        self.test_size = test_size
+        self.random_state = random_state
 
-    def set_train_test_data(self, considered_labels, test_size=0.25, random_state=42):
-        """
-        Create training and test sets for prediction model.
-        :param considered_labels: the list of relevant labels.
-        :param test_size: the percentage of input to be used as test set.
-        :param random_state: the random state.
-        """
-        # create label-to-int translation
-        labels_dict = {}
-        for i, label in enumerate(considered_labels):
-            labels_dict[label] = i
+        # initialize training and test splits (data and corresponding labels)
+        self.train_data, self.test_data, self.train_labels, self.test_labels = \
+            SequenceClassifierInput._get_training_inputs_by_labels(considered_labels, table_name, inputs_per_label,
+                                                                   test_size, random_state)
 
-        # get training pairs from database
-        data, labels = self._get_training_inputs_by_labels(considered_labels)
+    def get_spectrum_train_test_data(self):
+        """
+        Create training and test splits (data and corresponding labels) for Spectrum Kernel.
+        """
+        train_size = len(self.train_data)
+        data = self.train_data + self.test_data
+        labels = self.train_labels + self.test_labels
 
         # apply shingling on data, each item becomes a shingles list
         data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
@@ -70,28 +69,34 @@ class SequenceClassifierInput(object):
 
         # pad shingles lists looking at the maximum length
         pad_data = SequenceClassifierInput._pad_shingles_lists(encoded_data)
-        self.max_feature_size = len(pad_data[0])
 
         # translate labels in integers
+        labels_dict = {}
+        for i, label in enumerate(self.considered_labels):
+            labels_dict[label] = i
         labels = [labels_dict[label] for label in labels]
 
-        self.train_data, self.test_data, self.train_labels, self.test_labels \
-            = train_test_split(pad_data, labels, test_size=test_size, random_state=random_state)
+        return pad_data[:train_size], pad_data[train_size:], labels[:train_size], labels[train_size:]
 
-    def _get_training_inputs_by_labels(self, labels):
+    @staticmethod
+    def _get_training_inputs_by_labels(considered_labels, table_name, inputs_per_label, test_size, random_state):
         """
         Retrieve training pairs given a list of relevant labels.
-        :param labels: the list of relevant labels.
+        :param considered_labels: the list of relevant labels.
+        :param table_name: the table where training inputs are stored.
+        :param inputs_per_label: how many inputs per label to be retrieved.
+        :param test_size: the size of the test split.
+        :param random_state: the random state.
         :return: two lists, one containing training data and one containing corresponding labels.
         """
-        train_test_matrix = []
-        for label in labels:
-            label_table = persistence.get_training_inputs_by_label(label, table_name=self.table_name,
-                                                                   limit=self.inputs_per_label)
+        data = []
+        labels = []
+        for label in considered_labels:
+            label_table = persistence.get_training_inputs_by_label(label, table_name=table_name, limit=inputs_per_label)
             for row in label_table:
-                train_test_matrix.append(row)
-        train_test_matrix = np.asarray(train_test_matrix)
-        return train_test_matrix[:, 0], train_test_matrix[:, 1]
+                data.append(row[0])
+                labels.append(row[1])
+        return train_test_split(data, labels, test_size=test_size, random_state=random_state)
 
     @staticmethod
     def _get_substring(string, spectrum=3):

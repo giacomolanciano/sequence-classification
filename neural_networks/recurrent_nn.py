@@ -98,8 +98,7 @@ def _format_data_matrix(data):
 
 def main(considered_labels, inputs_per_label):
     # retrieve input data from database
-    clf_input = SequenceClassifierInput(inputs_per_label=inputs_per_label)
-    clf_input.set_train_test_data(considered_labels)
+    clf_input = SequenceClassifierInput(considered_labels, inputs_per_label=inputs_per_label)
 
     # create label-to-vector translation structure
     labels_vectors = []
@@ -109,14 +108,14 @@ def main(considered_labels, inputs_per_label):
         label_vector[i] = 1
         labels_vectors.append(label_vector)
 
-    x_train = _format_data_matrix(clf_input.train_data)
-    y_train = np.asarray([labels_vectors[i] for i in clf_input.train_labels])
-
-    x_test = _format_data_matrix(clf_input.test_data)
-    y_test = np.asarray([labels_vectors[i] for i in clf_input.test_labels])
+    train_data, test_data, train_labels, test_labels = clf_input.get_spectrum_train_test_data()
+    train_data = _format_data_matrix(train_data)
+    train_labels = np.asarray([labels_vectors[i] for i in train_labels])
+    test_data = _format_data_matrix(test_data)
+    test_labels = np.asarray([labels_vectors[i] for i in test_labels])
 
     # initialize tensorflow
-    _, rows, row_size = x_train.shape
+    _, rows, row_size = train_data.shape
 
     data = tf.placeholder(tf.float32, [None, rows, row_size])
     target = tf.placeholder(tf.float32, [None, num_labels])
@@ -127,18 +126,18 @@ def main(considered_labels, inputs_per_label):
     # start session
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
-    train_size = len(x_train)
+    train_size = len(train_data)
     indices_num = int(train_size - (0.25 * train_size))
     err = []
 
     for epoch in range(EPOCH_NUM):
         rand_index = np.random.choice(train_size, indices_num)
-        batch_xs = np.asarray(x_train[rand_index])
-        batch_ys = y_train[rand_index]
+        batch_xs = np.asarray(train_data[rand_index])
+        batch_ys = train_labels[rand_index]
         sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
 
         # compute step error
-        error = sess.run(model.error, {data: x_test, target: y_test, dropout: 1})
+        error = sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
         error_percentage = 100 * error
         err.append(error)
         print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'

@@ -85,9 +85,8 @@ if __name__ == '__main__':
     import time
     from datetime import timedelta
 
-    clf_input = SequenceClassifierInput(inputs_per_label=100)
-    clf_input.set_train_test_data(['TRANSCRIPTION', 'LYASE'])
-    inputs_data = clf_input.train_data + clf_input.test_data
+    clf_input = SequenceClassifierInput(['TRANSCRIPTION', 'LYASE'], inputs_per_label=100)
+    inputs_data, _, _, _ = clf_input.get_spectrum_train_test_data()
 
     # test kernels performances on same data
     start_time = time.time()
