@@ -48,6 +48,28 @@ class SequenceClassifierInput(object):
             SequenceClassifierInput._get_training_inputs_by_labels(considered_labels, table_name, inputs_per_label,
                                                                    test_size, random_state)
 
+    def get_rnn_train_test_data(self):
+        """
+        Create training and test splits (data and corresponding labels) for Spectrum Kernel.
+        """
+        train_size = len(self.train_data)
+        data = self.train_data + self.test_data
+        labels = self.train_labels + self.test_labels
+
+        # apply shingling on data, each item becomes a shingles list
+        data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
+
+        # pad shingles lists looking at the maximum length
+        pad_data = SequenceClassifierInput._pad_shingles_lists(data)
+
+        # translate labels in integers
+        labels_dict = {}
+        for i, label in enumerate(self.considered_labels):
+            labels_dict[label] = i
+        labels = [labels_dict[label] for label in labels]
+
+        return pad_data[:train_size], pad_data[train_size:], labels[:train_size], labels[train_size:]
+
     def get_spectrum_train_test_data(self):
         """
         Create training and test splits (data and corresponding labels) for Spectrum Kernel.

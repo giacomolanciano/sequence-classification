@@ -109,7 +109,28 @@ def main(considered_labels, inputs_per_label):
         label_vector[i] = 1
         labels_vectors.append(label_vector)
 
-    train_data, test_data, train_labels, test_labels = clf_input.get_spectrum_train_test_data()
+    train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
+    train_size = len(train_data)
+
+    input_data = train_data + test_data
+    glove_model = tf_glove.GloVeModel(embedding_size=100, context_size=10)
+    glove_model.fit_to_corpus(input_data)
+    glove_model.train(num_epochs=100)
+
+    glove_matrix = []
+    for shingle_list in input_data:
+        vectors = []
+        for shingle in shingle_list:
+            vec = glove_model.embedding_for(shingle)
+            vectors.append(vec)
+        glove_matrix.append(np.mean(vectors, axis=0))
+    glove_matrix = np.asarray(glove_matrix)
+
+    train_data = glove_matrix[:train_size]
+    print(train_data.shape)
+    test_data = glove_matrix[train_size:]
+    print(test_data.shape)
+
     train_data = _format_data_matrix(train_data)
     train_labels = np.asarray([labels_vectors[i] for i in train_labels])
     test_data = _format_data_matrix(test_data)
@@ -152,11 +173,4 @@ def main(considered_labels, inputs_per_label):
 
 
 if __name__ == '__main__':
-    # main(['TRANSCRIPTION', 'LYASE'], 1000)
-
-    clf_input = SequenceClassifierInput(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
-    model = tf_glove.GloVeModel(embedding_size=300, context_size=10)
-    model.fit_to_corpus(clf_input.train_data)
-    model.train(num_epochs=100)
-
-    model.embedding_for(clf_input.train_data[0])
+    main(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], 10)
