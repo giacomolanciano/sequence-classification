@@ -62,10 +62,13 @@ class SequenceClassifierInput(object):
         # pad shingles lists looking at the maximum length
         pad_data = SequenceClassifierInput._pad_shingles_lists(data)
 
-        # translate labels in integers
+        # translate labels in binary vectors
         labels_dict = {}
+        num_labels = len(self.considered_labels)
         for i, label in enumerate(self.considered_labels):
-            labels_dict[label] = i
+            label_vector = [0] * num_labels
+            label_vector[i] = 1
+            labels_dict[label] = label_vector
         labels = [labels_dict[label] for label in labels]
 
         return pad_data[:train_size], pad_data[train_size:], labels[:train_size], labels[train_size:]
@@ -81,7 +84,7 @@ class SequenceClassifierInput(object):
         # apply shingling on data, each item becomes a shingles list
         data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
 
-        # transform string sequences into int sequences
+        # transform string sequences into binary sequences
         encoded_data = []
         for shingle_list in data:
             encoded_sequence = []

@@ -1,26 +1,30 @@
 import functools
+from datetime import timedelta
+
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import time
+
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 from neural_networks import tf_glove
 
-EPOCH_NUM = 500
+EPOCH_NUM = 900
 LEARNING_RATE = 0.003
 
 
-def lazy_property(function):
+def lazy_property(funct):
     """
     Causes the function to act like a property. The function is only evaluated once, when it's accessed for the
     first time. The result is stored an directly returned for later accesses, for tha sake of efficiency.
     """
-    attribute = '_' + function.__name__
+    attribute = '_' + funct.__name__
 
     @property
-    @functools.wraps(function)
+    @functools.wraps(funct)
     def wrapper(self):
         if not hasattr(self, attribute):
-            setattr(self, attribute, function(self))
+            setattr(self, attribute, funct(self))
         return getattr(self, attribute)
 
     return wrapper
@@ -86,7 +90,7 @@ def _format_data_matrix(data):
     """
     Give the data matrix the right shape for being given as input to recurrent NN.
     :param data: a list of input data.
-    :return: the formatted data matrix
+    :return: the formatted data matrix.
     """
     data_matrix = np.asarray([data])
     transformed_data_matrix = []
@@ -97,50 +101,79 @@ def _format_data_matrix(data):
     return np.asarray(transformed_data_matrix)
 
 
+def _build_glove_matrix(glove_model, data):
+    """
+    Build a matrix which rows correspond to sequences GloVe embeddings.
+    Each sequence embedding is computed through the average of the embedding of its n-grams.
+    :param glove_model: a trained GloVe model.
+    :param data: a list of input data.
+    :return: the GloVe embeddings matrix.
+    """
+    glove_matrix = []
+    for shingle_list in data:
+        vectors = []
+        for shingle in shingle_list:
+            vec = glove_model.embedding_for(shingle)
+            vectors.append(vec)
+        glove_matrix.append(np.mean(vectors, axis=0))  # mean gives better performances wrt sum
+    return np.asarray(glove_matrix)
+
+
 def main(considered_labels, inputs_per_label):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(considered_labels, inputs_per_label=inputs_per_label)
 
     # create label-to-vector translation structure
-    labels_vectors = []
-    num_labels = len(considered_labels)
-    for i in range(num_labels):
-        label_vector = [0] * num_labels
-        label_vector[i] = 1
-        labels_vectors.append(label_vector)
+    # labels_vectors = []
+    # num_labels = len(considered_labels)
+    # for i in range(num_labels):
+    #     label_vector = [0] * num_labels
+    #     label_vector[i] = 1
+    #     labels_vectors.append(label_vector)
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
     train_size = len(train_data)
 
+    """
+    SEQUENCES EMBEDDING THROUGH GloVe MODEL
+    """
+    # train GloVe model
     input_data = train_data + test_data
     glove_model = tf_glove.GloVeModel(embedding_size=100, context_size=10)
+
+    start_time = time.time()
+
     glove_model.fit_to_corpus(input_data)
     glove_model.train(num_epochs=100)
 
-    glove_matrix = []
-    for shingle_list in input_data:
-        vectors = []
-        for shingle in shingle_list:
-            vec = glove_model.embedding_for(shingle)
-            vectors.append(vec)
-        glove_matrix.append(np.mean(vectors, axis=0))
-    glove_matrix = np.asarray(glove_matrix)
+    elapsed_time = (time.time() - start_time)
+    print('GloVe model training time: ', timedelta(seconds=elapsed_time))
 
+    # build RNN training and test inputs
+    start_time = time.time()
+
+    glove_matrix = _build_glove_matrix(glove_model, input_data)
     train_data = glove_matrix[:train_size]
-    print(train_data.shape)
     test_data = glove_matrix[train_size:]
-    print(test_data.shape)
 
+    elapsed_time = (time.time() - start_time)
+
+    print('GloVe matrix building time: ', timedelta(seconds=elapsed_time))
+    print('Training data shape: ', train_data.shape)
+    print('Testing data shape:  ', test_data.shape)
+
+    """
+    INITIALIZE TENSORFLOW COMPUTATIONAL GRAPH
+    """
     train_data = _format_data_matrix(train_data)
-    train_labels = np.asarray([labels_vectors[i] for i in train_labels])
+    train_labels = np.asarray(train_labels)
     test_data = _format_data_matrix(test_data)
-    test_labels = np.asarray([labels_vectors[i] for i in test_labels])
+    test_labels = np.asarray(test_labels)
 
-    # initialize tensorflow
     _, rows, row_size = train_data.shape
 
     data = tf.placeholder(tf.float32, [None, rows, row_size])
-    target = tf.placeholder(tf.float32, [None, num_labels])
+    target = tf.placeholder(tf.float32, [None, len(considered_labels)])
     dropout = tf.placeholder(tf.float32)
 
     model = SequenceClassification(data, target, dropout)
@@ -159,13 +192,19 @@ def main(considered_labels, inputs_per_label):
         sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
 
         # compute step error
-        error = sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
-        error_percentage = 100 * error
-        err.append(error)
-        print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
-              .format(epoch + 1, 100 - error_percentage, error_percentage))
+        if (epoch + 1) % 100 == 0:
+            error = sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
+            error_percentage = 100 * error
+            err.append(error)
+            print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
+                  .format(epoch + 1, 100 - error_percentage, error_percentage))
+        else:
+            print('Epoch {:2d}'.format(epoch + 1))
 
-    # plot error function
+
+    """
+    PLOT ERROR FUNCTION
+    """
     plt.figure(1)
     plt.plot([x for x in range(1, EPOCH_NUM + 1)], err)
     plt.axis([1, EPOCH_NUM, 0, 1])
@@ -173,4 +212,4 @@ def main(considered_labels, inputs_per_label):
 
 
 if __name__ == '__main__':
-    main(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], 10)
+    main(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], 100)
