@@ -9,8 +9,10 @@ from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
 from neural_networks import tf_glove
 
-EPOCH_NUM = 900
 LEARNING_RATE = 0.003
+EPOCHS_NUM = 10
+STEPS_NUM = 100
+BATCH_SIZE = 0.75
 
 
 def lazy_property(funct):
@@ -31,12 +33,12 @@ def lazy_property(funct):
 
 
 class SequenceClassification:
-    def __init__(self, data, target, dropout, num_neurons=200, num_layers=3):
+    def __init__(self, data, target, dropout, neurons_num=200, layers_num=3):
         self.data = data
         self.target = target
         self.dropout = dropout
-        self._num_neurons = num_neurons
-        self._num_layers = num_layers
+        self._neurons_num = neurons_num
+        self._layers_num = layers_num
         # needed to initialize lazy properties
         self.prediction
         self.error
@@ -45,9 +47,9 @@ class SequenceClassification:
     @lazy_property
     def prediction(self):
         # Recurrent network.
-        network = tf.contrib.rnn.BasicLSTMCell(self._num_neurons)
+        network = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
         network = tf.contrib.rnn.DropoutWrapper(network, output_keep_prob=self.dropout)
-        network = tf.contrib.rnn.MultiRNNCell([network] * self._num_layers)
+        network = tf.contrib.rnn.MultiRNNCell([network] * self._layers_num)
 
         output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32)
 
@@ -56,7 +58,7 @@ class SequenceClassification:
         last = tf.gather(output, int(output.get_shape()[0]) - 1)
 
         # Softmax layer.
-        weight, bias = self._weight_and_bias(self._num_neurons, int(self.target.get_shape()[1]))
+        weight, bias = self._weight_and_bias(self._neurons_num, int(self.target.get_shape()[1]))
 
         prediction = tf.nn.softmax(tf.matmul(last, weight) + bias)
         return prediction
@@ -115,21 +117,13 @@ def _build_glove_matrix(glove_model, data):
         for shingle in shingle_list:
             vec = glove_model.embedding_for(shingle)
             vectors.append(vec)
-        glove_matrix.append(np.mean(vectors, axis=0))  # mean gives better performances wrt sum
+        glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better wrt sum
     return np.asarray(glove_matrix)
 
 
 def main(considered_labels, inputs_per_label):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(considered_labels, inputs_per_label=inputs_per_label)
-
-    # create label-to-vector translation structure
-    # labels_vectors = []
-    # num_labels = len(considered_labels)
-    # for i in range(num_labels):
-    #     label_vector = [0] * num_labels
-    #     label_vector[i] = 1
-    #     labels_vectors.append(label_vector)
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
     train_size = len(train_data)
@@ -181,33 +175,32 @@ def main(considered_labels, inputs_per_label):
     # start session
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
+
     train_size = len(train_data)
-    indices_num = int(train_size - (0.25 * train_size))
-    err = []
+    indices_num = int(BATCH_SIZE * train_size)
+    errors = []
+    for epoch in range(EPOCHS_NUM):
+        error = 0
 
-    for epoch in range(EPOCH_NUM):
-        rand_index = np.random.choice(train_size, indices_num)
-        batch_xs = np.asarray(train_data[rand_index])
-        batch_ys = train_labels[rand_index]
-        sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
+        for _ in range(STEPS_NUM):
+            rand_index = np.random.choice(train_size, indices_num)
+            batch_xs = np.asarray(train_data[rand_index])
+            batch_ys = train_labels[rand_index]
+            sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
+            error += sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
 
-        # compute step error
-        if (epoch + 1) % 100 == 0:
-            error = sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
-            error_percentage = 100 * error
-            err.append(error)
-            print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
-                  .format(epoch + 1, 100 - error_percentage, error_percentage))
-        else:
-            print('Epoch {:2d}'.format(epoch + 1))
-
+        error = error / STEPS_NUM
+        error_percentage = 100 * error
+        errors.append(error)
+        print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
+              .format(epoch + 1, 100 - error_percentage, error_percentage))
 
     """
     PLOT ERROR FUNCTION
     """
     plt.figure(1)
-    plt.plot([x for x in range(1, EPOCH_NUM + 1)], err)
-    plt.axis([1, EPOCH_NUM, 0, 1])
+    plt.plot([x for x in range(1, EPOCHS_NUM + 1)], errors)
+    plt.axis([1, EPOCHS_NUM, 0, 1])
     plt.show()
 
 
