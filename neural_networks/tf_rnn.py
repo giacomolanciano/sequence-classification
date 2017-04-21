@@ -121,11 +121,13 @@ def _build_glove_matrix(glove_model, data):
     return np.asarray(glove_matrix)
 
 
-def main(considered_labels, inputs_per_label):
+def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
-    clf_input = SequenceClassifierInput(considered_labels, inputs_per_label=inputs_per_label)
+    clf_input = SequenceClassifierInput(considered_labels=considered_labels, cached_dataset=cached_dataset,
+                                        inputs_per_label=inputs_per_label)
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
+    labels_num = clf_input.labels_num
     train_size = len(train_data)
 
     """
@@ -167,7 +169,7 @@ def main(considered_labels, inputs_per_label):
     _, rows, row_size = train_data.shape
 
     data = tf.placeholder(tf.float32, [None, rows, row_size])
-    target = tf.placeholder(tf.float32, [None, len(considered_labels)])
+    target = tf.placeholder(tf.float32, [None, labels_num])
     dropout = tf.placeholder(tf.float32)
 
     model = SequenceClassification(data, target, dropout)
@@ -205,4 +207,5 @@ def main(considered_labels, inputs_per_label):
 
 
 if __name__ == '__main__':
-    main(['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], 100)
+    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
+    main(cached_dataset='1492773692.9678297_3_OXIDOREDUCTASE_PROTEIN TRANSPORT.pickle')
