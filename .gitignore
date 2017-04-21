@@ -362,3 +362,4 @@ fabric.properties
 # data
 data/proteins.db
 data/pdb_seqres.txt
+data/*.pickle
