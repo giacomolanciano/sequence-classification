@@ -3,21 +3,14 @@ import os
 from sklearn.model_selection import train_test_split
 
 from utils import persistence
-from utils.constants import PADDING_VALUE
-from utils.constants import DATA_FOLDER
+from utils.constants import \
+    PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, DATASET_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
+    FILENAME_SEPARATOR, DUMP_EXT, DATA_FOLDER
 
 import pickle
 import time
 
 BASE_TWO = 2
-FILENAME_SEPARATOR = '_'
-RNN_SUFFIX = 'rnn'
-SPECTRUM_SUFFIX = 'spectrum'
-DUMP_EXT = '.pickle'
-SPECTRUM_KEY = 'spectrum'
-LABELS_KEY = 'labels'
-INPUTS_PER_LABEL_KEY = 'ipl'
-DATASET_KEY = 'dataset'
 AMINO_ACIDS_DICT = {
     'A': '10000000000000000000000000',
     'B': '01000000000000000000000000',
@@ -95,25 +88,10 @@ class SequenceClassifierInput(object):
                 pass
 
         train_size = len(self.train_data)
-        data = self.train_data + self.test_data
-        labels = self.train_labels + self.test_labels
+        data = self._preprocess_data(self.train_data + self.test_data)
+        labels = self._labels_to_prob_vectors(self.train_labels + self.test_labels)
 
-        # apply shingling on data, each item becomes a shingles list
-        data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
-
-        # pad shingles lists looking at the maximum length
-        pad_data = SequenceClassifierInput._pad_shingles_lists(data)
-
-        # translate labels to binary vectors
-        labels_dict = {}
-        num_labels = len(self.considered_labels)
-        for i, label in enumerate(self.considered_labels):
-            label_vector = [0] * num_labels
-            label_vector[i] = 1
-            labels_dict[label] = label_vector
-        labels = [labels_dict[label] for label in labels]
-
-        split_dataset = (pad_data[:train_size], pad_data[train_size:], labels[:train_size], labels[train_size:])
+        split_dataset = (data[:train_size], data[train_size:], labels[:train_size], labels[train_size:])
         self.dump_dataset(split_dataset, suffix=RNN_SUFFIX)  # pickle split dataset
         return split_dataset
 
@@ -130,30 +108,10 @@ class SequenceClassifierInput(object):
                 pass
 
         train_size = len(self.train_data)
-        data = self.train_data + self.test_data
-        labels = self.train_labels + self.test_labels
+        data = self._preprocess_data(self.train_data + self.test_data, encode=True)
+        labels = self._labels_to_integers(self.train_labels + self.test_labels)
 
-        # apply shingling on data, each item becomes a shingles list
-        data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
-
-        # transform string sequences into binary sequences
-        encoded_data = []
-        for shingle_list in data:
-            encoded_sequence = []
-            for shingle in shingle_list:
-                encoded_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
-            encoded_data.append(encoded_sequence)
-
-        # pad shingles lists looking at the maximum length
-        pad_data = SequenceClassifierInput._pad_shingles_lists(encoded_data)
-
-        # translate labels to integers
-        labels_dict = {}
-        for i, label in enumerate(self.considered_labels):
-            labels_dict[label] = i
-        labels = [labels_dict[label] for label in labels]
-
-        split_dataset = pad_data[:train_size], pad_data[train_size:], labels[:train_size], labels[train_size:]
+        split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
         self.dump_dataset(split_dataset, suffix='_spectrum')  # pickle split dataset
         return split_dataset
 
@@ -219,6 +177,49 @@ class SequenceClassifierInput(object):
         filename = os.path.join(DATA_FOLDER, filename)
         with open(filename, 'rb') as spilt_dataset:
             return pickle.load(spilt_dataset)
+
+    def _preprocess_data(self, data, encode=False):
+        # apply shingling on data, each item becomes a shingles list
+        preprocessed_data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
+
+        if encode:
+            # transform string sequences into binary sequences
+            encoded_data = []
+            for shingle_list in preprocessed_data:
+                encoded_sequence = []
+                for shingle in shingle_list:
+                    encoded_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
+                encoded_data.append(encoded_sequence)
+            preprocessed_data = encoded_data
+
+        # pad shingles lists looking at the maximum length
+        return SequenceClassifierInput._pad_shingles_lists(preprocessed_data)
+
+    def _labels_to_integers(self, labels):
+        """
+        Translate the given list of labels into integers (as many as the number of unique labels in the list).
+        :param labels: the list of labels.
+        :return: the translated list of labels.
+        """
+        labels_dict = {}
+        for i, label in enumerate(self.considered_labels):
+            labels_dict[label] = i
+        return [labels_dict[label] for label in labels]
+
+    def _labels_to_prob_vectors(self, labels):
+        """
+        Translate the given list of labels into vectors s.t. all components but one are 0 (as many variants as 
+        the number of unique labels in the list).
+        :param labels: the list of labels.
+        :return: the translated list of labels.
+        """
+        labels_dict = {}
+        num_labels = len(self.considered_labels)
+        for i, label in enumerate(self.considered_labels):
+            label_vector = [0] * num_labels
+            label_vector[i] = 1
+            labels_dict[label] = label_vector
+        return [labels_dict[label] for label in labels]
 
     @staticmethod
     def _get_substring(string, spectrum=3):

@@ -134,6 +134,8 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     SEQUENCES EMBEDDING THROUGH GloVe MODEL
     """
     # train GloVe model
+    print('Training GloVe model...')
+
     input_data = train_data + test_data
     glove_model = tf_glove.GloVeModel(embedding_size=100, context_size=10)
 
@@ -207,5 +209,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
-    main(cached_dataset='1492773692.9678297_3_OXIDOREDUCTASE_PROTEIN TRANSPORT.pickle')
+    main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
+    # main(cached_dataset='1492773692.9678297_3_OXIDOREDUCTASE_PROTEIN TRANSPORT.pickle')
