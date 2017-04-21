@@ -144,7 +144,7 @@ class SequenceClassifierInput(object):
         self._dump_dataset(split_dataset)  # pickle split dataset
         return split_dataset
 
-    def _dump_dataset(self, dataset, suffix='plain', **kwargs):
+    def _dump_dataset(self, dataset, suffix='', **kwargs):
         """
         Create a dump in secondary storage of the given dataset, appending the given suffix to the filename (to identify
         the intermediate result).
@@ -244,7 +244,7 @@ class SequenceClassifierInput(object):
         glove_model.train(num_epochs=100)
 
         elapsed_time = (time.time() - start_time)
-        print('GloVe model training time: ', timedelta(seconds=elapsed_time))
+        print('GloVe model training time:', timedelta(seconds=elapsed_time))
 
         glove_matrix = self._build_glove_matrix(glove_model, data)
         train_data = glove_matrix[:train_size]

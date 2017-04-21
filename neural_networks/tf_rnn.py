@@ -1,7 +1,9 @@
 import functools
+from datetime import timedelta
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import time
 
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
@@ -125,6 +127,8 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     model = SequenceClassification(data, target, dropout)
 
     # start session
+    start_time = time.time()
+
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
@@ -147,6 +151,9 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
         print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
               .format(epoch + 1, 100 - error_percentage, error_percentage))
 
+    elapsed_time = (time.time() - start_time)
+    print('RNN running time:', timedelta(seconds=elapsed_time))
+
     """
     PLOT ERROR FUNCTION
     """
@@ -157,5 +164,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
-    # main(cached_dataset='1492795564.4334495_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_plain.pickle')
+    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=1000)
+    main(cached_dataset='1492797429.828342_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
