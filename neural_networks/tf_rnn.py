@@ -1,13 +1,10 @@
 import functools
-from datetime import timedelta
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import time
 
 from machine_learning.sequence_classifier import SequenceClassifierInput
 import numpy as np
-from neural_networks import tf_glove
 
 LEARNING_RATE = 0.003
 EPOCHS_NUM = 10
@@ -103,24 +100,6 @@ def _format_data_matrix(data):
     return np.asarray(transformed_data_matrix)
 
 
-def _build_glove_matrix(glove_model, data):
-    """
-    Build a matrix which rows correspond to sequences GloVe embeddings.
-    Each sequence embedding is computed through the average of the embedding of its n-grams.
-    :param glove_model: a trained GloVe model.
-    :param data: a list of input data.
-    :return: the GloVe embeddings matrix.
-    """
-    glove_matrix = []
-    for shingle_list in data:
-        vectors = []
-        for shingle in shingle_list:
-            vec = glove_model.embedding_for(shingle)
-            vectors.append(vec)
-        glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better wrt sum
-    return np.asarray(glove_matrix)
-
-
 def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(considered_labels=considered_labels, cached_dataset=cached_dataset,
@@ -128,37 +107,6 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
     labels_num = clf_input.labels_num
-    train_size = len(train_data)
-
-    """
-    SEQUENCES EMBEDDING THROUGH GloVe MODEL
-    """
-    # train GloVe model
-    print('Training GloVe model...')
-
-    input_data = train_data + test_data
-    glove_model = tf_glove.GloVeModel(embedding_size=100, context_size=10)
-
-    start_time = time.time()
-
-    glove_model.fit_to_corpus(input_data)
-    glove_model.train(num_epochs=100)
-
-    elapsed_time = (time.time() - start_time)
-    print('GloVe model training time: ', timedelta(seconds=elapsed_time))
-
-    # build RNN training and test inputs
-    start_time = time.time()
-
-    glove_matrix = _build_glove_matrix(glove_model, input_data)
-    train_data = glove_matrix[:train_size]
-    test_data = glove_matrix[train_size:]
-
-    elapsed_time = (time.time() - start_time)
-
-    print('GloVe matrix building time: ', timedelta(seconds=elapsed_time))
-    print('Training data shape: ', train_data.shape)
-    print('Testing data shape:  ', test_data.shape)
 
     """
     INITIALIZE TENSORFLOW COMPUTATIONAL GRAPH
@@ -210,4 +158,4 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 if __name__ == '__main__':
     main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
-    # main(cached_dataset='1492773692.9678297_3_OXIDOREDUCTASE_PROTEIN TRANSPORT.pickle')
+    # main(cached_dataset='1492795564.4334495_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_plain.pickle')

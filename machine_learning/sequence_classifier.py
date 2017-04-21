@@ -1,7 +1,10 @@
 import os
+from datetime import timedelta
 
+import numpy as np
 from sklearn.model_selection import train_test_split
 
+from neural_networks import tf_glove
 from utils import persistence
 from utils.constants import \
     PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, DATASET_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
@@ -39,6 +42,7 @@ AMINO_ACIDS_DICT = {
     'Y': '00000000000000000000000010',
     'Z': '00000000000000000000000001'
 }
+GLOVE_EMBEDDING_SIZE = 100
 
 
 class MissingInputError(Exception):
@@ -66,7 +70,7 @@ class SequenceClassifierInput(object):
                 self._get_training_inputs_by_labels(
                     considered_labels, table_name, inputs_per_label, test_size, random_state)
         elif cached_dataset:
-            dataset_dict = self.load_dataset(cached_dataset)
+            dataset_dict = self._load_dataset(cached_dataset)
             self.spectrum = dataset_dict[SPECTRUM_KEY]
             self.considered_labels = dataset_dict[LABELS_KEY]
             self.labels_num = len(self.considered_labels)
@@ -82,7 +86,7 @@ class SequenceClassifierInput(object):
         if self.cached_dataset:
             # return cached intermediate dataset if exists
             try:
-                dataset_dict = self.load_dataset(self.cached_dataset, suffix=RNN_SUFFIX)
+                dataset_dict = self._load_dataset(self.cached_dataset, suffix=RNN_SUFFIX)
                 return dataset_dict[DATASET_KEY]
             except FileNotFoundError:
                 pass
@@ -91,8 +95,11 @@ class SequenceClassifierInput(object):
         data = self._preprocess_data(self.train_data + self.test_data)
         labels = self._labels_to_prob_vectors(self.train_labels + self.test_labels)
 
-        split_dataset = (data[:train_size], data[train_size:], labels[:train_size], labels[train_size:])
-        self.dump_dataset(split_dataset, suffix=RNN_SUFFIX)  # pickle split dataset
+        # perform data embedding through GloVe model
+        train_data, test_data = self._get_glove_embedded_data_splits(data, train_size)
+
+        split_dataset = (train_data, test_data, labels[:train_size], labels[train_size:])
+        self._dump_dataset(split_dataset, suffix=RNN_SUFFIX, glove_embedding_size=GLOVE_EMBEDDING_SIZE)
         return split_dataset
 
     def get_spectrum_train_test_data(self):
@@ -102,7 +109,7 @@ class SequenceClassifierInput(object):
         if self.cached_dataset:
             # return cached intermediate dataset if exists
             try:
-                dataset_dict = self.load_dataset(self.cached_dataset, suffix=SPECTRUM_SUFFIX)
+                dataset_dict = self._load_dataset(self.cached_dataset, suffix=SPECTRUM_SUFFIX)
                 return dataset_dict[DATASET_KEY]
             except FileNotFoundError:
                 pass
@@ -112,7 +119,7 @@ class SequenceClassifierInput(object):
         labels = self._labels_to_integers(self.train_labels + self.test_labels)
 
         split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
-        self.dump_dataset(split_dataset, suffix='_spectrum')  # pickle split dataset
+        self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)  # pickle split dataset
         return split_dataset
 
     def _get_training_inputs_by_labels(self, considered_labels, table_name, inputs_per_label, test_size, random_state):
@@ -134,10 +141,10 @@ class SequenceClassifierInput(object):
                 labels.append(row[1])
         split_dataset = train_test_split(data, labels, test_size=test_size, random_state=random_state)
         self.time = time.time()
-        self.dump_dataset(split_dataset)  # pickle split dataset
+        self._dump_dataset(split_dataset)  # pickle split dataset
         return split_dataset
 
-    def dump_dataset(self, dataset, suffix='', **kwargs):
+    def _dump_dataset(self, dataset, suffix='plain', **kwargs):
         """
         Create a dump in secondary storage of the given dataset, appending the given suffix to the filename (to identify
         the intermediate result).
@@ -162,7 +169,7 @@ class SequenceClassifierInput(object):
             pickle.dump(dataset_dict, data_dump)
 
     @staticmethod
-    def load_dataset(cached_dataset, suffix=None):
+    def _load_dataset(cached_dataset, suffix=None):
         """
         Load a dataset in memory from a dump in secondary storage identified by the given filename and optional suffix 
         (to identify the intermediate result).
@@ -221,6 +228,32 @@ class SequenceClassifierInput(object):
             labels_dict[label] = label_vector
         return [labels_dict[label] for label in labels]
 
+    def _get_glove_embedded_data_splits(self, data, train_size):
+        """
+        Create embeddings of the given data through GloVe model and return train and test splits.
+        :param data: the data.
+        :param train_size: the size of the train split.
+        :return: train and test splits of the given data.
+        """
+        print('Training GloVe model...')
+        glove_model = tf_glove.GloVeModel(embedding_size=GLOVE_EMBEDDING_SIZE, context_size=10)
+
+        start_time = time.time()
+
+        glove_model.fit_to_corpus(data)
+        glove_model.train(num_epochs=100)
+
+        elapsed_time = (time.time() - start_time)
+        print('GloVe model training time: ', timedelta(seconds=elapsed_time))
+
+        glove_matrix = self._build_glove_matrix(glove_model, data)
+        train_data = glove_matrix[:train_size]
+        test_data = glove_matrix[train_size:]
+
+        print('Training data shape: ', train_data.shape)
+        print('Testing data shape:  ', test_data.shape)
+        return train_data, test_data
+
     @staticmethod
     def _get_substring(string, spectrum=3):
         if spectrum == 0:
@@ -245,3 +278,21 @@ class SequenceClassifierInput(object):
             padding_length = max_length - len(shingle_list)
             shingle_list += [PADDING_VALUE] * padding_length
         return data
+
+    @staticmethod
+    def _build_glove_matrix(glove_model, data):
+        """
+        Build a matrix which rows correspond to sequences GloVe embeddings.
+        Each sequence embedding is computed through the average of the embedding of its n-grams.
+        :param glove_model: a trained GloVe model.
+        :param data: a list of input data.
+        :return: the GloVe embeddings matrix.
+        """
+        glove_matrix = []
+        for shingle_list in data:
+            vectors = []
+            for shingle in shingle_list:
+                vec = glove_model.embedding_for(shingle)
+                vectors.append(vec)
+            glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better wrt sum
+        return np.asarray(glove_matrix)
