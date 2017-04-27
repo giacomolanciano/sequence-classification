@@ -12,6 +12,7 @@ LEARNING_RATE = 0.003
 EPOCHS_NUM = 10
 STEPS_NUM = 100
 BATCH_SIZE = 0.3
+DROPOUT_KEEP_PROB = 0.5
 
 
 def lazy_property(funct):
@@ -142,8 +143,8 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
             rand_index = np.random.choice(train_size, indices_num)
             batch_xs = train_data[rand_index]
             batch_ys = train_labels[rand_index]
-            sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: 0.5})
-            error += sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})
+            sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: DROPOUT_KEEP_PROB})
+            error += sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})  # keep all for testing
 
         error = error / STEPS_NUM
         error_percentage = 100 * error
