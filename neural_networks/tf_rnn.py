@@ -5,7 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
 
-from machine_learning.sequence_classifier import SequenceClassifierInput
+from machine_learning.sequence_classifier_input import SequenceClassifierInput
 import numpy as np
 
 LEARNING_RATE = 0.003
@@ -59,7 +59,6 @@ class SequenceClassifier:
 
         # Softmax layer.
         weight, bias = self._weight_and_bias(self._neurons_num, int(self.target.get_shape()[1]))
-
         prediction = tf.nn.softmax(tf.matmul(last, weight) + bias)
         return prediction
 
@@ -72,8 +71,8 @@ class SequenceClassifier:
 
     @lazy_property
     def optimize(self):
-        # optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
         optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
+        # optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
         return optimizer.minimize(self.cost)
 
     @lazy_property

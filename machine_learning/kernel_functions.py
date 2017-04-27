@@ -1,7 +1,7 @@
 """ Module containing various kernel functions for sequence classification problem. """
 from collections import Counter
 
-from machine_learning.sequence_classifier import SequenceClassifierInput
+from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import PADDING_VALUE
 
 
