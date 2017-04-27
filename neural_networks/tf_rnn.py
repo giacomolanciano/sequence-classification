@@ -31,7 +31,7 @@ def lazy_property(funct):
     return wrapper
 
 
-class SequenceClassification:
+class SequenceClassifier:
     def __init__(self, data, target, dropout, neurons_num=200, layers_num=3):
         self.data = data
         self.target = target
@@ -46,10 +46,11 @@ class SequenceClassification:
     @lazy_property
     def prediction(self):
         # Recurrent network.
-        network = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
-        network = tf.contrib.rnn.DropoutWrapper(network, output_keep_prob=self.dropout)
-        network = tf.contrib.rnn.MultiRNNCell([network] * self._layers_num)
+        cell = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout)
+        network = tf.contrib.rnn.MultiRNNCell([cell] * self._layers_num)
 
+        # discard the state, since every time we look at a new sequence it becomes irrelevant.
         output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32)
 
         # Select last output.
@@ -124,7 +125,7 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     target = tf.placeholder(tf.float32, [None, labels_num])
     dropout = tf.placeholder(tf.float32)
 
-    model = SequenceClassification(data, target, dropout)
+    model = SequenceClassifier(data, target, dropout)
 
     # start session
     start_time = time.time()
