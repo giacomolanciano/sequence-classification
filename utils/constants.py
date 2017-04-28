@@ -11,6 +11,7 @@ DUMP_EXT = '.pickle'
 SPECTRUM_KEY = 'spectrum'
 LABELS_KEY = 'labels'
 INPUTS_PER_LABEL_KEY = 'ipl'
+TIME_KEY = 'time'
 DATASET_KEY = 'dataset'
 
 

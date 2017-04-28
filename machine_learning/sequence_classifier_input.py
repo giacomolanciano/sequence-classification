@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from neural_networks import tf_glove
 from utils import persistence
 from utils.constants import \
-    PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, DATASET_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
+    PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, TIME_KEY, DATASET_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
     FILENAME_SEPARATOR, DUMP_EXT, DATA_FOLDER
 
 import pickle
@@ -75,6 +75,7 @@ class SequenceClassifierInput(object):
             self.considered_labels = dataset_dict[LABELS_KEY]
             self.labels_num = len(self.considered_labels)
             self.inputs_per_label = dataset_dict[INPUTS_PER_LABEL_KEY]
+            self.time = dataset_dict[TIME_KEY]
             self.train_data, self.test_data, self.train_labels, self.test_labels = dataset_dict[DATASET_KEY]
         else:
             raise MissingInputError('Neither labels to be considered nor cached dataset are provided.')
@@ -146,7 +147,7 @@ class SequenceClassifierInput(object):
 
     def _dump_dataset(self, dataset, suffix='', **kwargs):
         """
-        Create a dump in secondary storage of the given dataset, appending the given suffix to the filename (to identify
+        Create a dump of the given dataset in secondary storage, appending the given suffix to the filename (to identify
         the intermediate result).
         :param dataset: the object that represents the dataset.
         :param suffix: the string that identifies the intermediate step.
@@ -156,6 +157,7 @@ class SequenceClassifierInput(object):
             SPECTRUM_KEY: self.spectrum,
             LABELS_KEY: self.considered_labels,
             INPUTS_PER_LABEL_KEY: self.inputs_per_label,
+            TIME_KEY: self.time,
             DATASET_KEY: dataset
         }
 

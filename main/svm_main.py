@@ -11,7 +11,7 @@ from machine_learning.model_performance_measure import ModelPerformanceMeasure
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 
 CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT', 'LECTIN']
-# CONSIDERED_CLASSES = ['ALPHA', 'BETA']
+# CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT']
 
 
 clf = svm.SVC(kernel='precomputed')
@@ -21,6 +21,7 @@ print('Loading dataset...')
 clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, table_name='protein', inputs_per_label=200, spectrum=3)
 train_data, test_data, train_labels, test_labels = clf_input.get_spectrum_train_test_data()
 train_labels = np.asarray(train_labels)
+test_labels = np.asarray(test_labels)
 
 start_time = time.time()
 
