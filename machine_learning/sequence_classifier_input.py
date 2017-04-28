@@ -81,7 +81,7 @@ class SequenceClassifierInput(object):
 
     def get_rnn_train_test_data(self):
         """
-        Create training and test splits (data and corresponding labels) for Spectrum Kernel.
+        Create training and test splits (data and corresponding labels) for RNN.
         """
         if self.cached_dataset:
             # return cached intermediate dataset if exists
@@ -240,12 +240,14 @@ class SequenceClassifierInput(object):
 
         start_time = time.time()
 
+        # train GloVe model
         glove_model.fit_to_corpus(data)
         glove_model.train(num_epochs=100)
 
         elapsed_time = (time.time() - start_time)
         print('GloVe model training time:', timedelta(seconds=elapsed_time))
 
+        # build sequences embeddings and partition the dataset into train and test splits
         glove_matrix = self._build_glove_matrix(glove_model, data)
         train_data = glove_matrix[:train_size]
         test_data = glove_matrix[train_size:]
@@ -282,8 +284,8 @@ class SequenceClassifierInput(object):
     @staticmethod
     def _build_glove_matrix(glove_model, data):
         """
-        Build a matrix which rows correspond to sequences GloVe embeddings.
-        Each sequence embedding is computed through the average of the embedding of its n-grams.
+        Return a matrix which rows correspond to sequences GloVe embeddings.
+        Each sequence embedding is computed as the average of the embedding of its n-grams.
         :param glove_model: a trained GloVe model.
         :param data: a list of input data.
         :return: the GloVe embeddings matrix.
@@ -294,5 +296,5 @@ class SequenceClassifierInput(object):
             for shingle in shingle_list:
                 vec = glove_model.embedding_for(shingle)
                 vectors.append(vec)
-            glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better wrt sum
+            glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better than sum
         return np.asarray(glove_matrix)
