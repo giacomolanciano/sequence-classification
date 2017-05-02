@@ -208,7 +208,6 @@ class SuffixTree(object):
         return self.find_substring(substring) != -1
 
 
-
 if __name__ == '__main__':
     string = "ABCBCDCDEBCD"
     tree = SuffixTree(string)

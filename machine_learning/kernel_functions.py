@@ -8,6 +8,7 @@ from utils.constants import PADDING_VALUE
 def naive_spectrum_kernel(rows_data, cols_data):
     """
     Compute the Spectrum Kernel matrix in a naive fashion (not feasible in practice).
+    
     :param rows_data: the list of data corresponding to the rows of the kernel matrix.
     :param cols_data: the list of data corresponding to the columns of the kernel matrix.
     :return: a list of list representing the kernel matrix.
@@ -30,6 +31,7 @@ def occurrence_dict_spectrum_kernel(rows_data, cols_data):
     """
     Compute the Spectrum Kernel matrix using an occurrences dictionary of each sequence shingles list (to improve
     performances).
+    
     :param rows_data: the list of data corresponding to the rows of the kernel matrix.
     :param cols_data: the list of data corresponding to the columns of the kernel matrix.
     :return: a list of list representing the kernel matrix.
@@ -58,6 +60,7 @@ def precomputed_occurrence_dict_spectrum_kernel(data):
     performances). This specialized version of the algorithm assumes that the same dataset is used for both the rows and
     the columns of the matrix. Therefore, the resulting kernel matrix is symmetric and performances can be further
     improved (by computing only an "half" of it).
+    
     :param data: the list of data corresponding to both the rows and the columns of the kernel matrix.
     :return: a list of list representing the kernel matrix.
     """

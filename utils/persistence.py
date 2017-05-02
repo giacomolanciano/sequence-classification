@@ -5,6 +5,7 @@ from utils.constants import DATABASE
 def insert_protein(pdb_id, sequence, class_label):
     """
     Insert protein data into db.
+    
     :param pdb_id: protein PDB identifier.
     :param sequence: protein amino acids sequence.
     :param class_label: protein classification.
@@ -23,6 +24,7 @@ def insert_protein(pdb_id, sequence, class_label):
 def is_known_protein(pdb_id):
     """
     Tells whether a protein is already in db or not.
+    
     :param pdb_id: protein PDB identifier.
     :return: True if already in, False otherwise.
     """
@@ -40,6 +42,7 @@ def is_known_protein(pdb_id):
 def get_proteins_unique_labels():
     """
     Count how many distinct proteins labels are stored in db.
+    
     :return: The number of distinct labels.
     """
     result = 0
@@ -55,6 +58,7 @@ def get_proteins_unique_labels():
 def get_table(table_name='protein', limit=None):
     """
     Get all records from a given SQL table.
+    
     :param table_name: a string indicating the table.
     :param limit: maximum number of rows to be returned.
     :return: a list of lists representing the records.
@@ -73,6 +77,7 @@ def get_table(table_name='protein', limit=None):
 def get_rows_by_label(label_name, table_name='protein', limit=None):
     """
     Get all records related to a given label from a given SQL table.
+    
     :param label_name: a string indicating the label.
     :param table_name: a string indicating the table.
     :param limit: maximum number of rows to be returned.
@@ -92,6 +97,7 @@ def get_rows_by_label(label_name, table_name='protein', limit=None):
 def get_training_inputs_by_label(label_name, table_name='protein', limit=None):
     """
     Get all training inputs related to a given label from a given SQL table.
+    
     :param label_name: a string indicating the label.
     :param table_name: a string indicating the table.
     :param limit: maximum number of rows to be returned.

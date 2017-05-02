@@ -126,6 +126,7 @@ class SequenceClassifierInput(object):
     def _get_training_inputs_by_labels(self, considered_labels, table_name, inputs_per_label, test_size, random_state):
         """
         Retrieve training pairs given a list of relevant labels.
+        
         :param considered_labels: the list of relevant labels.
         :param table_name: the table where training inputs are stored.
         :param inputs_per_label: how many inputs per label to be retrieved.
@@ -149,6 +150,7 @@ class SequenceClassifierInput(object):
         """
         Create a dump of the given dataset in secondary storage, appending the given suffix to the filename (to identify
         the intermediate result).
+        
         :param dataset: the object that represents the dataset.
         :param suffix: the string that identifies the intermediate step.
         :param kwargs: a dict that provides extra descriptive parameters of the given dataset.
@@ -175,6 +177,7 @@ class SequenceClassifierInput(object):
         """
         Load a dataset in memory from a dump in secondary storage identified by the given filename and optional suffix 
         (to identify the intermediate result).
+        
         :param cached_dataset: the filename of the dataset.
         :param suffix: the string that identifies the intermediate step.
         :return: the object that represents the dataset.
@@ -207,6 +210,7 @@ class SequenceClassifierInput(object):
     def _labels_to_integers(self, labels):
         """
         Translate the given list of labels into integers (as many as the number of unique labels in the list).
+        
         :param labels: the list of labels.
         :return: the translated list of labels.
         """
@@ -219,6 +223,7 @@ class SequenceClassifierInput(object):
         """
         Translate the given list of labels into vectors s.t. all components but one are 0 (as many variants as 
         the number of unique labels in the list).
+        
         :param labels: the list of labels.
         :return: the translated list of labels.
         """
@@ -233,6 +238,7 @@ class SequenceClassifierInput(object):
     def _get_glove_embedded_data_splits(self, data, train_size):
         """
         Create embeddings of the given data through GloVe model and return train and test splits.
+        
         :param data: the data.
         :param train_size: the size of the train split.
         :return: train and test splits of the given data.
@@ -288,6 +294,7 @@ class SequenceClassifierInput(object):
         """
         Return a matrix which rows correspond to sequences GloVe embeddings.
         Each sequence embedding is computed as the average of the embedding of its n-grams.
+        
         :param glove_model: a trained GloVe model.
         :param data: a list of input data.
         :return: the GloVe embeddings matrix.
