@@ -1,3 +1,5 @@
+""" Credits to https://github.com/GradySimon/tensorflow-glove """
+
 from collections import Counter, defaultdict
 import os
 from random import shuffle
