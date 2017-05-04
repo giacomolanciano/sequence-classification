@@ -10,8 +10,8 @@ import numpy as np
 
 LEARNING_RATE = 0.003
 EPOCHS_NUM = 10
-STEPS_NUM = 100
-BATCH_SIZE = 0.3
+STEPS_NUM = 10
+BATCH_SIZE = 0.1
 DROPOUT_KEEP_PROB = 0.5
 
 
@@ -66,14 +66,11 @@ class SequenceClassifier:
     @lazy_property
     def cost(self):
         cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
-        # cross_entropy = slim.losses.mean_squared_error(self.prediction, self.target)
-        # cross_entropy = slim.losses.hinge_loss(self.prediction, self.target)
         return cross_entropy
 
     @lazy_property
     def optimize(self):
         optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
-        # optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE)
         return optimizer.minimize(self.cost)
 
     @lazy_property
@@ -114,11 +111,10 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     """
     INITIALIZE TENSORFLOW COMPUTATIONAL GRAPH
     """
-    train_data = _format_data_matrix(train_data)
     train_labels = np.asarray(train_labels)
-    test_data = _format_data_matrix(test_data)
     test_labels = np.asarray(test_labels)
 
+    print(train_data.shape)
     _, rows, row_size = train_data.shape
 
     data = tf.placeholder(tf.float32, [None, rows, row_size])
@@ -137,9 +133,11 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     indices_num = int(BATCH_SIZE * train_size)
     errors = []
     for epoch in range(EPOCHS_NUM):
+        print('Epoch {:2d}'.format(epoch + 1))
         error = 0
 
-        for _ in range(STEPS_NUM):
+        for step in range(STEPS_NUM):
+            print('\tstep {:3d}'.format(step + 1))
             rand_index = np.random.choice(train_size, indices_num)
             batch_xs = train_data[rand_index]
             batch_ys = train_labels[rand_index]
@@ -149,8 +147,7 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
         error = error / STEPS_NUM
         error_percentage = 100 * error
         errors.append(error)
-        print('Epoch {:2d} \n\taccuracy {:3.1f}% \n\terror {:3.1f}%'
-              .format(epoch + 1, 100 - error_percentage, error_percentage))
+        print('\taccuracy {:3.1f}% \n\terror {:3.1f}%'.format(100 - error_percentage, error_percentage))
 
     elapsed_time = (time.time() - start_time)
     print('RNN running time:', timedelta(seconds=elapsed_time))
@@ -165,5 +162,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=1000)
-    main(cached_dataset='1492797429.828342_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
+    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
+    main(cached_dataset='1493894120.6477304_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')

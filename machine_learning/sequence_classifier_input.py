@@ -305,5 +305,5 @@ class SequenceClassifierInput(object):
             for shingle in shingle_list:
                 vec = glove_model.embedding_for(shingle)
                 vectors.append(vec)
-            glove_matrix.append(np.mean(vectors, axis=0))  # mean performs better than sum
+            glove_matrix.append(list(vectors))
         return np.asarray(glove_matrix)
