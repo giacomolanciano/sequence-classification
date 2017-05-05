@@ -8,10 +8,13 @@ import time
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 import numpy as np
 
+INPUTS_PER_LABEL = 100
+NEURONS_NUM = 200
+LAYERS_NUM = 3
 LEARNING_RATE = 0.003
 EPOCHS_NUM = 10
-STEPS_NUM = 10
-BATCH_SIZE = 0.1
+STEPS_NUM = 100
+MINI_BATCH_SIZE = 0.3
 DROPOUT_KEEP_PROB = 0.5
 
 
@@ -33,10 +36,10 @@ def lazy_property(funct):
 
 
 class SequenceClassifier:
-    def __init__(self, data, target, dropout, neurons_num=200, layers_num=3):
+    def __init__(self, data, target, dropout_keep_prob, neurons_num=NEURONS_NUM, layers_num=LAYERS_NUM):
         self.data = data
         self.target = target
-        self.dropout = dropout
+        self.dropout_keep_prob = dropout_keep_prob
         self._neurons_num = neurons_num
         self._layers_num = layers_num
         # needed to initialize lazy properties
@@ -48,7 +51,7 @@ class SequenceClassifier:
     def prediction(self):
         # Recurrent network.
         cell = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout_keep_prob)
         network = tf.contrib.rnn.MultiRNNCell([cell] * self._layers_num)
 
         # discard the state, since every time we look at a new sequence it becomes irrelevant.
@@ -85,43 +88,26 @@ class SequenceClassifier:
         return tf.Variable(weight), tf.Variable(bias)
 
 
-def _format_data_matrix(data):
-    """
-    Give the data matrix the right shape for being given as input to recurrent NN.
-    :param data: a list of input data.
-    :return: the formatted data matrix.
-    """
-    data_matrix = np.asarray([data])
-    transformed_data_matrix = []
-    for seq in range(0, len(data_matrix[0])):
-        row = data_matrix[0][seq]
-        row = np.asarray([row])
-        transformed_data_matrix.append(row)
-    return np.asarray(transformed_data_matrix)
-
-
 def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(considered_labels=considered_labels, cached_dataset=cached_dataset,
                                         inputs_per_label=inputs_per_label)
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
-    labels_num = clf_input.labels_num
 
     """
-    INITIALIZE TENSORFLOW COMPUTATIONAL GRAPH
+    INITIALIZE COMPUTATION GRAPH
     """
     train_labels = np.asarray(train_labels)
     test_labels = np.asarray(test_labels)
 
     print(train_data.shape)
-    _, rows, row_size = train_data.shape
+    _, sequence_length, input_dimension = train_data.shape  # sequences number (i.e. batch_size) is defined at runtime
 
-    data = tf.placeholder(tf.float32, [None, rows, row_size])
-    target = tf.placeholder(tf.float32, [None, labels_num])
-    dropout = tf.placeholder(tf.float32)
-
-    model = SequenceClassifier(data, target, dropout)
+    data = tf.placeholder(tf.float32, [None, sequence_length, input_dimension])
+    target = tf.placeholder(tf.float32, [None, clf_input.labels_num])
+    dropout_keep_prob = tf.placeholder(tf.float32)
+    model = SequenceClassifier(data, target, dropout_keep_prob)
 
     # start session
     start_time = time.time()
@@ -130,7 +116,7 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     sess.run(tf.global_variables_initializer())
 
     train_size = len(train_data)
-    indices_num = int(BATCH_SIZE * train_size)
+    indices_num = int(MINI_BATCH_SIZE * train_size)
     errors = []
     for epoch in range(EPOCHS_NUM):
         print('Epoch {:2d}'.format(epoch + 1))
@@ -139,11 +125,14 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
         for step in range(STEPS_NUM):
             print('\tstep {:3d}'.format(step + 1))
             rand_index = np.random.choice(train_size, indices_num)
-            batch_xs = train_data[rand_index]
-            batch_ys = train_labels[rand_index]
-            sess.run(model.optimize, {data: batch_xs, target: batch_ys, dropout: DROPOUT_KEEP_PROB})
-            error += sess.run(model.error, {data: test_data, target: test_labels, dropout: 1})  # keep all for testing
+            mini_batch_xs = train_data[rand_index]
+            mini_batch_ys = train_labels[rand_index]
+            sess.run(model.optimize, {data: mini_batch_xs, target: mini_batch_ys, dropout_keep_prob: DROPOUT_KEEP_PROB})
 
+            # dropout_keep_prob is set to 1 (i.e. keep all) only for testing
+            error += sess.run(model.error, {data: test_data, target: test_labels, dropout_keep_prob: 1})
+
+        # compute mean error in epoch
         error = error / STEPS_NUM
         error_percentage = 100 * error
         errors.append(error)
@@ -162,5 +151,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=100)
-    main(cached_dataset='1493894120.6477304_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
+    main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=INPUTS_PER_LABEL)
+    # main(cached_dataset='1493894120.6477304_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
