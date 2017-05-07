@@ -106,8 +106,11 @@ class SequenceClassifier:
 
 def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
-    clf_input = SequenceClassifierInput(considered_labels=considered_labels, cached_dataset=cached_dataset,
-                                        inputs_per_label=inputs_per_label)
+    clf_input = SequenceClassifierInput(
+        considered_labels=considered_labels,
+        cached_dataset=cached_dataset,
+        inputs_per_label=inputs_per_label
+    )
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
 
@@ -134,7 +137,6 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     errors = []
     for epoch in range(EPOCHS_NUM):
         print('Epoch {:2d}'.format(epoch + 1))
-        error = 0
 
         for step in range(STEPS_NUM):
             print('\tstep {:3d}'.format(step + 1))
@@ -143,14 +145,11 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
             mini_batch_ys = train_labels[rand_index]
             sess.run(model.optimize, {data: mini_batch_xs, target: mini_batch_ys, dropout_keep_prob: DROPOUT_KEEP_PROB})
 
-            # dropout_keep_prob is set to 1 (i.e. keep all) only for testing
-            error += sess.run(model.error, {data: test_data, target: test_labels, dropout_keep_prob: 1})
-
-        # compute mean error in epoch
-        error = error / STEPS_NUM
+        # dropout_keep_prob is set to 1 (i.e. keep all) only for testing
+        error = sess.run(model.error, {data: test_data, target: test_labels, dropout_keep_prob: 1})
         error_percentage = 100 * error
         errors.append(error)
-        print('\taccuracy {:3.1f}% \n\terror {:3.1f}%'.format(100 - error_percentage, error_percentage))
+        print('\taccuracy: {:3.1f}% \n\terror: {:3.1f}%'.format(100 - error_percentage, error_percentage))
 
     elapsed_time = (time.time() - start_time)
     print('RNN running time:', timedelta(seconds=elapsed_time))

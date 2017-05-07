@@ -94,12 +94,12 @@ class SequenceClassifierInput(object):
 
         train_size = len(self.train_data)
         data = self._preprocess_data(self.train_data + self.test_data)
-        labels = self._labels_to_prob_vectors(self.train_labels + self.test_labels)
+        labels = np.asarray(self._labels_to_prob_vectors(self.train_labels + self.test_labels))
 
         # perform data embedding through GloVe model
         train_data, test_data = self._get_glove_embedded_data_splits(data, train_size)
 
-        split_dataset = (train_data, test_data, np.asarray(labels[:train_size]), np.asarray(labels[train_size:]))
+        split_dataset = (train_data, test_data, labels[:train_size], labels[train_size:])
         self._dump_dataset(split_dataset, suffix=RNN_SUFFIX, glove_embedding_size=GLOVE_EMBEDDING_SIZE)
         return split_dataset
 
