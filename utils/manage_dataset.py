@@ -33,6 +33,7 @@ def load_dataset(cached_dataset):
         return pickle.load(spilt_dataset)
 
 if __name__ == '__main__':
-    # substitute with the code for the desired manipulation of a cached dataset.
-    d = load_dataset(cached_dataset='1493894120.6477304_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_rnn.pickle')
-    pprint(d)
+    # insert the code for the desired manipulation of a cached dataset.
+    d = load_dataset(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_rnn.pickle')
+    td = d['dataset'][0]
+    pprint(td[0])

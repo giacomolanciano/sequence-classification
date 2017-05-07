@@ -48,6 +48,13 @@ class SequenceClassifier:
         self.optimize
 
     @lazy_property
+    def length(self):
+        used = tf.sign(tf.reduce_max(tf.abs(self.data), reduction_indices=2))
+        length = tf.reduce_sum(used, reduction_indices=1)
+        length = tf.cast(length, tf.int32)
+        return length
+
+    @lazy_property
     def prediction(self):
         # Recurrent network.
         cell = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
@@ -55,11 +62,10 @@ class SequenceClassifier:
         network = tf.contrib.rnn.MultiRNNCell([cell] * self._layers_num)
 
         # discard the state, since every time we look at a new sequence it becomes irrelevant.
-        output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32)
+        output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32, sequence_length=self.length)
 
         # Select last output.
-        output = tf.transpose(output, [1, 0, 2])
-        last = tf.gather(output, int(output.get_shape()[0]) - 1)
+        last = self._last_relevant(output, self.length)
 
         # Softmax layer.
         weight, bias = self._weight_and_bias(self._neurons_num, int(self.target.get_shape()[1]))
@@ -87,6 +93,16 @@ class SequenceClassifier:
         bias = tf.constant(0.1, shape=[out_size])
         return tf.Variable(weight), tf.Variable(bias)
 
+    @staticmethod
+    def _last_relevant(output, length):
+        batch_size = tf.shape(output)[0]
+        max_length = int(output.get_shape()[1])
+        output_size = int(output.get_shape()[2])
+        index = tf.range(0, batch_size) * max_length + (length - 1)
+        flat = tf.reshape(output, [-1, output_size])
+        relevant = tf.gather(flat, index)
+        return relevant
+
 
 def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
@@ -98,13 +114,11 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     """
     INITIALIZE COMPUTATION GRAPH
     """
-    train_labels = np.asarray(train_labels)
-    test_labels = np.asarray(test_labels)
+    sequence_max_length = len(train_data[0])
+    frame_dimension = len(train_data[0][0])
 
-    print(train_data.shape)
-    _, sequence_length, input_dimension = train_data.shape  # sequences number (i.e. batch_size) is defined at runtime
-
-    data = tf.placeholder(tf.float32, [None, sequence_length, input_dimension])
+    # sequences number (i.e. batch_size) defined at runtime
+    data = tf.placeholder(tf.float32, [None, sequence_max_length, frame_dimension])
     target = tf.placeholder(tf.float32, [None, clf_input.labels_num])
     dropout_keep_prob = tf.placeholder(tf.float32)
     model = SequenceClassifier(data, target, dropout_keep_prob)
@@ -151,5 +165,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=INPUTS_PER_LABEL)
-    # main(cached_dataset='1493894120.6477304_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
+    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=INPUTS_PER_LABEL)
+    main(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')

@@ -99,7 +99,7 @@ class SequenceClassifierInput(object):
         # perform data embedding through GloVe model
         train_data, test_data = self._get_glove_embedded_data_splits(data, train_size)
 
-        split_dataset = (train_data, test_data, labels[:train_size], labels[train_size:])
+        split_dataset = (train_data, test_data, np.asarray(labels[:train_size]), np.asarray(labels[train_size:]))
         self._dump_dataset(split_dataset, suffix=RNN_SUFFIX, glove_embedding_size=GLOVE_EMBEDDING_SIZE)
         return split_dataset
 
@@ -116,7 +116,7 @@ class SequenceClassifierInput(object):
                 pass
 
         train_size = len(self.train_data)
-        data = self._preprocess_data(self.train_data + self.test_data, encode=True)
+        data = self._preprocess_data(self.train_data + self.test_data, encode=True, pad=True)
         labels = self._labels_to_integers(self.train_labels + self.test_labels)
 
         split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
@@ -190,9 +190,9 @@ class SequenceClassifierInput(object):
         with open(filename, 'rb') as spilt_dataset:
             return pickle.load(spilt_dataset)
 
-    def _preprocess_data(self, data, encode=False):
+    def _preprocess_data(self, data, encode=False, pad=False):
         # apply shingling on data, each item becomes a shingles list
-        preprocessed_data = [SequenceClassifierInput._get_substring(item, spectrum=self.spectrum) for item in data]
+        preprocessed_data = [self._get_n_grams(item, n=self.spectrum) for item in data]
 
         if encode:
             # transform string sequences into binary sequences
@@ -200,12 +200,15 @@ class SequenceClassifierInput(object):
             for shingle_list in preprocessed_data:
                 encoded_sequence = []
                 for shingle in shingle_list:
-                    encoded_sequence.append(SequenceClassifierInput._encode_sequence(shingle))
+                    encoded_sequence.append(self._encode_sequence(shingle))
                 encoded_data.append(encoded_sequence)
             preprocessed_data = encoded_data
 
-        # pad shingles lists looking at the maximum length
-        return SequenceClassifierInput._pad_shingles_lists(preprocessed_data)
+        if pad:
+            # pad shingles lists looking at the maximum length
+            preprocessed_data = self._pad_shingles_lists(preprocessed_data)
+
+        return preprocessed_data
 
     def _labels_to_integers(self, labels):
         """
@@ -260,18 +263,36 @@ class SequenceClassifierInput(object):
         train_data = glove_matrix[:train_size]
         test_data = glove_matrix[train_size:]
 
-        print('Training data shape: ', train_data.shape)
-        print('Testing data shape:  ', test_data.shape)
+        # print('Training data shape: ', train_data.shape)
+        # print('Testing data shape:  ', test_data.shape)
         return train_data, test_data
 
+    def _build_glove_matrix(self, glove_model, data):
+        """
+        Return a matrix which rows correspond to sequences GloVe embeddings.
+        Each sequence embedding is computed as the average of the embedding of its n-grams.
+
+        :param glove_model: a trained GloVe model.
+        :param data: a list of input data.
+        :return: the GloVe embeddings matrix.
+        """
+        glove_matrix = []
+        for shingle_list in data:
+            vectors = []
+            for shingle in shingle_list:
+                vec = glove_model.embedding_for(shingle)
+                vectors.append(vec)
+            glove_matrix.append(list(vectors))
+        return np.asarray(self._pad_glove_embeddings(glove_matrix))
+
     @staticmethod
-    def _get_substring(string, spectrum=3):
-        if spectrum == 0:
+    def _get_n_grams(string, n=3):
+        if n == 0:
             result = ['']
-        elif len(string) <= spectrum:
+        elif len(string) <= n:
             result = [string]
         else:
-            result = [string[i: i + spectrum] for i in range(len(string) - spectrum + 1)]
+            result = [string[i: i + n] for i in range(len(string) - n + 1)]
         return result
 
     @staticmethod
@@ -290,20 +311,11 @@ class SequenceClassifierInput(object):
         return data
 
     @staticmethod
-    def _build_glove_matrix(glove_model, data):
-        """
-        Return a matrix which rows correspond to sequences GloVe embeddings.
-        Each sequence embedding is computed as the average of the embedding of its n-grams.
-        
-        :param glove_model: a trained GloVe model.
-        :param data: a list of input data.
-        :return: the GloVe embeddings matrix.
-        """
-        glove_matrix = []
-        for shingle_list in data:
-            vectors = []
-            for shingle in shingle_list:
-                vec = glove_model.embedding_for(shingle)
-                vectors.append(vec)
-            glove_matrix.append(list(vectors))
-        return np.asarray(glove_matrix)
+    def _pad_glove_embeddings(data):
+        max_length = len(max(data, key=len))
+
+        # pad inputs with respect to max length
+        for sequence in data:
+            padding_length = max_length - len(sequence)
+            sequence += [[PADDING_VALUE] * GLOVE_EMBEDDING_SIZE] * padding_length
+        return data
