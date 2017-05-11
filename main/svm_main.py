@@ -10,8 +10,8 @@ from machine_learning.kernel_functions import occurrence_dict_spectrum_kernel
 from machine_learning.model_performance_measure import ModelPerformanceMeasure
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 
-CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT', 'LECTIN']
-# CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT']
+CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE', 'OXIDOREDUCTASE']
+# CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
 
 
 clf = svm.SVC(kernel='precomputed')

@@ -329,8 +329,9 @@ class SequenceClassifierInput(object):
 if __name__ == '__main__':
     from collections import Counter
 
-    CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT']
-    clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, table_name='protein', inputs_per_label=1000)
+    CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
+    clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, inputs_per_label=1000)
+    clf_input.get_rnn_train_test_data()
 
     inputs = clf_input.train_data + clf_input.test_data
     labels = clf_input.train_labels + clf_input.test_labels

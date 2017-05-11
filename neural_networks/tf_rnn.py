@@ -10,7 +10,7 @@ import numpy as np
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT
 
-INPUTS_PER_LABEL = 100
+INPUTS_PER_LABEL = 1000
 NEURONS_NUM = 200
 LAYERS_NUM = 3
 LEARNING_RATE = 0.003
@@ -172,5 +172,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    # main(considered_labels=['OXIDOREDUCTASE', 'PROTEIN TRANSPORT'], inputs_per_label=INPUTS_PER_LABEL)
-    main(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
+    main(considered_labels=['HYDROLASE', 'TRANSFERASE'], inputs_per_label=INPUTS_PER_LABEL)
+    # main(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
