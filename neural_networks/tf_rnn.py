@@ -1,12 +1,14 @@
+import os
 import functools
 from datetime import timedelta
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
+import numpy as np
 
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
-import numpy as np
+from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT
 
 INPUTS_PER_LABEL = 100
 NEURONS_NUM = 200
@@ -126,6 +128,9 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     dropout_keep_prob = tf.placeholder(tf.float32)
     model = SequenceClassifier(data, target, dropout_keep_prob)
 
+    # to save and restore variables after training
+    saver = tf.train.Saver()
+
     # start session
     start_time = time.time()
 
@@ -153,6 +158,9 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
     elapsed_time = (time.time() - start_time)
     print('RNN running time:', timedelta(seconds=elapsed_time))
+
+    # save model variables
+    saver.save(sess, os.path.join(TRAINED_MODELS_FOLDER, str(time.time()) + TF_MODEL_EXT))
 
     """
     PLOT ERROR FUNCTION

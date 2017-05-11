@@ -363,3 +363,7 @@ fabric.properties
 data/proteins.db
 data/pdb_seqres.txt
 data/*.pickle
+
+# trained models
+trained_models/*
+!trained_models/.gitkeep
