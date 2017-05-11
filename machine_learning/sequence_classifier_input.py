@@ -138,6 +138,11 @@ class SequenceClassifierInput(object):
         labels = []
         for label in considered_labels:
             label_table = persistence.get_training_inputs_by_label(label, table_name=table_name, limit=inputs_per_label)
+
+            if len(label_table) < inputs_per_label:
+                raise ValueError('The label %s has less than %d items associated with it in the database.'
+                                 % (label, inputs_per_label))
+
             for row in label_table:
                 data.append(row[0])
                 labels.append(row[1])
@@ -319,3 +324,18 @@ class SequenceClassifierInput(object):
             padding_length = max_length - len(sequence)
             sequence += [[PADDING_VALUE] * GLOVE_EMBEDDING_SIZE] * padding_length
         return data
+
+
+if __name__ == '__main__':
+    from collections import Counter
+
+    CONSIDERED_CLASSES = ['OXIDOREDUCTASE', 'PROTEIN TRANSPORT']
+    clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, table_name='protein', inputs_per_label=1000)
+
+    inputs = clf_input.train_data + clf_input.test_data
+    labels = clf_input.train_labels + clf_input.test_labels
+    c = Counter(labels)
+
+    print('inputs num:', len(inputs))
+    print('labels num:', len(labels))
+    print(c)
