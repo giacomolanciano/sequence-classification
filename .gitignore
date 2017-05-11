@@ -360,9 +360,8 @@ crashlytics-build.properties
 fabric.properties
 
 # data
-data/proteins.db
-data/pdb_seqres.txt
-data/*.pickle
+data/*
+!data/Table_PDB_Domain.tsv
 
 # trained models
 trained_models/*

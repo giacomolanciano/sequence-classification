@@ -1,7 +1,8 @@
 import os
 
-import pickle
 from pprint import pprint
+
+import klepto
 
 from utils.constants import DATA_FOLDER
 
@@ -15,9 +16,11 @@ def dump_dataset(dataset_dict, filename):
     :param dataset_dict: a dict representing the feature of the dataset.
     :param filename: the filename of the dataset dump.
     """
-    filename = os.path.join(DATA_FOLDER, filename)
-    with open(filename, 'wb') as data_dump:
-        pickle.dump(dataset_dict, data_dump)
+    dirname = os.path.join(DATA_FOLDER, filename)
+    archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+    for key, val in dataset_dict.items():
+        archive[key] = val
+    archive.dump()
 
 
 def load_dataset(cached_dataset):
@@ -28,12 +31,13 @@ def load_dataset(cached_dataset):
     :param cached_dataset: the filename of the dataset.
     :return: the object that represents the dataset.
     """
-    filename = os.path.join(DATA_FOLDER, cached_dataset)
-    with open(filename, 'rb') as spilt_dataset:
-        return pickle.load(spilt_dataset)
+    dirname = os.path.join(DATA_FOLDER, cached_dataset)
+    archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+    archive.load()
+    return archive
 
 if __name__ == '__main__':
     # insert the code for the desired manipulation of a cached dataset.
-    d = load_dataset(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_rnn.pickle')
-    td = d['dataset'][0]
+    d = load_dataset(cached_dataset='...')
+    td = d['train_data']
     pprint(td[0])

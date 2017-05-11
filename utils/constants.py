@@ -9,12 +9,18 @@ PADDING_VALUE = 0
 FILENAME_SEPARATOR = '_'
 RNN_SUFFIX = 'rnn'
 SPECTRUM_SUFFIX = 'spectrum'
-DUMP_EXT = '.pickle'
 SPECTRUM_KEY = 'spectrum'
 LABELS_KEY = 'labels'
 INPUTS_PER_LABEL_KEY = 'ipl'
 TIME_KEY = 'time'
-DATASET_KEY = 'dataset'
+TRAIN_DATA_KEY = 'train_data'
+TEST_DATA_KEY = 'test_data'
+TRAIN_LABELS_KEY = 'train_labels'
+TEST_LABELS_KEY = 'test_labels'
+TRAIN_DATA_POS = 0
+TEST_DATA_POS = 1
+TRAIN_LABELS_POS = 2
+TEST_LABELS_POS = 3
 
 
 if __name__ == '__main__':

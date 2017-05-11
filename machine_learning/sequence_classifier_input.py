@@ -7,10 +7,11 @@ from sklearn.model_selection import train_test_split
 from neural_networks import tf_glove
 from utils import persistence
 from utils.constants import \
-    PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, TIME_KEY, DATASET_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
-    FILENAME_SEPARATOR, DUMP_EXT, DATA_FOLDER
+    PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, TIME_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
+    FILENAME_SEPARATOR, DATA_FOLDER, TRAIN_DATA_KEY, TEST_DATA_KEY, TRAIN_LABELS_KEY, TEST_LABELS_KEY, \
+    TRAIN_DATA_POS, TEST_DATA_POS, TRAIN_LABELS_POS, TEST_LABELS_POS
 
-import pickle
+import klepto
 import time
 
 BASE_TWO = 2
@@ -76,7 +77,10 @@ class SequenceClassifierInput(object):
             self.labels_num = len(self.considered_labels)
             self.inputs_per_label = dataset_dict[INPUTS_PER_LABEL_KEY]
             self.time = dataset_dict[TIME_KEY]
-            self.train_data, self.test_data, self.train_labels, self.test_labels = dataset_dict[DATASET_KEY]
+            self.train_data = dataset_dict[TRAIN_DATA_KEY]
+            self.test_data = dataset_dict[TEST_DATA_KEY]
+            self.train_labels = dataset_dict[TRAIN_LABELS_KEY]
+            self.test_labels = dataset_dict[TEST_LABELS_KEY]
         else:
             raise MissingInputError('Neither labels to be considered nor cached dataset are provided.')
 
@@ -88,7 +92,8 @@ class SequenceClassifierInput(object):
             # return cached intermediate dataset if exists
             try:
                 dataset_dict = self._load_dataset(self.cached_dataset, suffix=RNN_SUFFIX)
-                return dataset_dict[DATASET_KEY]
+                return (dataset_dict[TRAIN_DATA_KEY], dataset_dict[TEST_DATA_KEY],
+                        dataset_dict[TRAIN_LABELS_KEY], dataset_dict[TEST_LABELS_KEY])
             except FileNotFoundError:
                 pass
 
@@ -111,7 +116,8 @@ class SequenceClassifierInput(object):
             # return cached intermediate dataset if exists
             try:
                 dataset_dict = self._load_dataset(self.cached_dataset, suffix=SPECTRUM_SUFFIX)
-                return dataset_dict[DATASET_KEY]
+                return (dataset_dict[TRAIN_DATA_KEY], dataset_dict[TEST_DATA_KEY],
+                        dataset_dict[TRAIN_LABELS_KEY], dataset_dict[TEST_LABELS_KEY])
             except FileNotFoundError:
                 pass
 
@@ -120,7 +126,7 @@ class SequenceClassifierInput(object):
         labels = self._labels_to_integers(self.train_labels + self.test_labels)
 
         split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
-        self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)  # pickle split dataset
+        self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)
         return split_dataset
 
     def _get_training_inputs_by_labels(self, considered_labels, table_name, inputs_per_label, test_size, random_state):
@@ -148,14 +154,16 @@ class SequenceClassifierInput(object):
                 labels.append(row[1])
         split_dataset = train_test_split(data, labels, test_size=test_size, random_state=random_state)
         self.time = time.time()
-        self._dump_dataset(split_dataset)  # pickle split dataset
+        self._dump_dataset(split_dataset)
         return split_dataset
 
     def _dump_dataset(self, dataset, suffix='', **kwargs):
         """
         Create a dump of the given dataset in secondary storage, appending the given suffix to the filename (to identify
-        the intermediate result).
+        the intermediate result). The dataset must be a tuple of four elements corresponding respectively to:
+        train data, test data, train labels, test labels.
         
+        :type dataset: tuple
         :param dataset: the object that represents the dataset.
         :param suffix: the string that identifies the intermediate step.
         :param kwargs: a dict that provides extra descriptive parameters of the given dataset.
@@ -165,17 +173,22 @@ class SequenceClassifierInput(object):
             LABELS_KEY: self.considered_labels,
             INPUTS_PER_LABEL_KEY: self.inputs_per_label,
             TIME_KEY: self.time,
-            DATASET_KEY: dataset
+            TRAIN_DATA_KEY: dataset[TRAIN_DATA_POS],
+            TEST_DATA_KEY: dataset[TEST_DATA_POS],
+            TRAIN_LABELS_KEY: dataset[TRAIN_LABELS_POS],
+            TEST_LABELS_KEY: dataset[TEST_LABELS_POS]
         }
 
         if kwargs:
             # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
             dataset_dict = {**dataset_dict, **kwargs}
 
-        filename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels + [suffix])
-        filename = os.path.join(DATA_FOLDER, filename + DUMP_EXT)
-        with open(filename, 'wb') as data_dump:
-            pickle.dump(dataset_dict, data_dump)
+        dirname = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels + [suffix])
+        dirname = os.path.join(DATA_FOLDER, dirname)
+        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+        for key, val in dataset_dict.items():
+            archive[key] = val
+        archive.dump()
 
     @staticmethod
     def _load_dataset(cached_dataset, suffix=None):
@@ -188,12 +201,17 @@ class SequenceClassifierInput(object):
         :return: the object that represents the dataset.
         """
         if suffix:
-            filename = cached_dataset[:-len(DUMP_EXT)] + suffix + DUMP_EXT
+            dirname = cached_dataset + suffix
         else:
-            filename = cached_dataset
-        filename = os.path.join(DATA_FOLDER, filename)
-        with open(filename, 'rb') as spilt_dataset:
-            return pickle.load(spilt_dataset)
+            dirname = cached_dataset
+        dirname = os.path.join(DATA_FOLDER, dirname)
+
+        if not os.path.isdir(dirname):
+            raise FileNotFoundError
+
+        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+        archive.load()
+        return archive
 
     def _preprocess_data(self, data, encode=False, pad=False):
         # apply shingling on data, each item becomes a shingles list
@@ -330,7 +348,7 @@ if __name__ == '__main__':
     from collections import Counter
 
     CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
-    clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, inputs_per_label=1000)
+    clf_input = SequenceClassifierInput(considered_labels=CONSIDERED_CLASSES, inputs_per_label=4000)
     clf_input.get_rnn_train_test_data()
 
     inputs = clf_input.train_data + clf_input.test_data
