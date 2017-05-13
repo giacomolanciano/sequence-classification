@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 
 import numpy as np
+import sys
 from sklearn.model_selection import train_test_split
 
 from neural_networks import tf_glove
@@ -188,7 +189,10 @@ class SequenceClassifierInput(object):
         archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
         for key, val in dataset_dict.items():
             archive[key] = val
-        archive.dump()
+        try:
+            archive.dump()
+        except MemoryError:
+            print('The dataset dump %s has not been stored due to memory error.' % dirname, file=sys.stderr)
 
     @staticmethod
     def _load_dataset(cached_dataset, suffix=None):
@@ -285,9 +289,6 @@ class SequenceClassifierInput(object):
         glove_matrix = self._build_glove_matrix(glove_model, data)
         train_data = glove_matrix[:train_size]
         test_data = glove_matrix[train_size:]
-
-        # print('Training data shape: ', train_data.shape)
-        # print('Testing data shape:  ', test_data.shape)
         return train_data, test_data
 
     def _build_glove_matrix(self, glove_model, data):
