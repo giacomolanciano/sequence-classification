@@ -25,7 +25,7 @@ DROPOUT_KEEP_PROB = 0.5
 def lazy_property(funct):
     """
     Causes the function to act like a property. The function is only evaluated once, when it's accessed for the
-    first time. The result is stored an directly returned for later accesses, for tha sake of efficiency.
+    first time. The result is stored an directly returned for later accesses, for the sake of efficiency.
     """
     attribute = '_' + funct.__name__
 
