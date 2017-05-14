@@ -8,9 +8,11 @@ import time
 import numpy as np
 
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
-from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT
+from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT
+from utils.files import unique_filename
 
-INPUTS_PER_LABEL = 1000
+CONSIDERED_LABELS = ['HYDROLASE', 'TRANSFERASE']
+INPUTS_PER_LABEL = 4000
 NEURONS_NUM = 200
 LAYERS_NUM = 3
 LEARNING_RATE = 0.003
@@ -160,7 +162,7 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     print('RNN running time:', timedelta(seconds=elapsed_time))
 
     # save model variables
-    saver.save(sess, os.path.join(TRAINED_MODELS_FOLDER, str(time.time()) + TF_MODEL_EXT))
+    saver.save(sess, os.path.join(TRAINED_MODELS_FOLDER, str(int(time.time())) + TF_MODEL_EXT))
 
     """
     PLOT ERROR FUNCTION
@@ -168,9 +170,11 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     plt.figure(1)
     plt.plot([x for x in range(1, EPOCHS_NUM + 1)], errors)
     plt.axis([1, EPOCHS_NUM, 0, 1])
-    plt.show()
+    _, figname = unique_filename(os.path.join(TRAINED_MODELS_FOLDER, clf_input.dump_basename + IMG_EXT))
+    plt.savefig(figname, bbox_inches='tight')
+    # plt.show()
 
 
 if __name__ == '__main__':
-    main(considered_labels=['HYDROLASE', 'TRANSFERASE'], inputs_per_label=INPUTS_PER_LABEL)
-    # main(cached_dataset='1494155537.5589833_3_OXIDOREDUCTASE_PROTEIN TRANSPORT_.pickle')
+    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
+    # main(cached_dataset='1494772695_3_HYDROLASE_TRANSFERASE_')

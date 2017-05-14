@@ -63,6 +63,7 @@ class SequenceClassifierInput(object):
         self.test_size = test_size
         self.random_state = random_state
         self.time = None
+        self.dump_basename = None
 
         # initialize training and test splits (both data and labels)
         if considered_labels:
@@ -73,6 +74,7 @@ class SequenceClassifierInput(object):
                     considered_labels, table_name, inputs_per_label, test_size, random_state)
         elif cached_dataset:
             dataset_dict = self._load_dataset(cached_dataset)
+            self.dump_basename = cached_dataset
             self.spectrum = dataset_dict[SPECTRUM_KEY]
             self.considered_labels = dataset_dict[LABELS_KEY]
             self.labels_num = len(self.considered_labels)
@@ -154,7 +156,7 @@ class SequenceClassifierInput(object):
                 data.append(row[0])
                 labels.append(row[1])
         split_dataset = train_test_split(data, labels, test_size=test_size, random_state=random_state)
-        self.time = time.time()
+        self.time = int(time.time())
         self._dump_dataset(split_dataset)
         return split_dataset
 
@@ -184,7 +186,9 @@ class SequenceClassifierInput(object):
             # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
             dataset_dict.update(kwargs)
 
-        dirname = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels + [suffix])
+        if not self.dump_basename:
+            self.dump_basename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels)
+        dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])
         dirname = os.path.join(DATA_FOLDER, dirname)
         archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
         for key, val in dataset_dict.items():
