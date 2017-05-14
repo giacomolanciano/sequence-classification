@@ -182,7 +182,7 @@ class SequenceClassifierInput(object):
 
         if kwargs:
             # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
-            dataset_dict = {**dataset_dict, **kwargs}
+            dataset_dict.update(kwargs)
 
         dirname = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels + [suffix])
         dirname = os.path.join(DATA_FOLDER, dirname)
