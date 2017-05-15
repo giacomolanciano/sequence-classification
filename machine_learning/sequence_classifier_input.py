@@ -81,8 +81,6 @@ class SequenceClassifierInput(object):
         if considered_labels:
             self.cached_dataset = None
             self.labels_num = len(considered_labels)
-            self.train_data, self.test_data, self.train_labels, self.test_labels = \
-                self._get_training_inputs_by_labels()
         elif cached_dataset:
             dataset_dict = self._load_dataset(cached_dataset)
             self.dump_basename = cached_dataset
@@ -91,10 +89,6 @@ class SequenceClassifierInput(object):
             self.labels_num = len(self.considered_labels)
             self.inputs_per_label = dataset_dict[INPUTS_PER_LABEL_KEY]
             self.time = dataset_dict[TIME_KEY]
-            self.train_data = dataset_dict[TRAIN_DATA_KEY]
-            self.test_data = dataset_dict[TEST_DATA_KEY]
-            self.train_labels = dataset_dict[TRAIN_LABELS_KEY]
-            self.test_labels = dataset_dict[TEST_LABELS_KEY]
         else:
             raise MissingInputError('Neither labels to be considered nor cached dataset are provided.')
 
@@ -111,11 +105,17 @@ class SequenceClassifierInput(object):
                 return (dataset_dict[TRAIN_DATA_KEY], dataset_dict[TEST_DATA_KEY],
                         dataset_dict[TRAIN_LABELS_KEY], dataset_dict[TEST_LABELS_KEY])
             except FileNotFoundError:
-                pass
+                dataset_dict = self._load_dataset(self.cached_dataset)
+                train_data = dataset_dict[TRAIN_DATA_KEY]
+                test_data = dataset_dict[TEST_DATA_KEY]
+                train_labels = dataset_dict[TRAIN_LABELS_KEY]
+                test_labels = dataset_dict[TEST_LABELS_KEY]
+        else:
+            train_data, test_data, train_labels, test_labels = self._get_training_inputs_by_labels()
 
-        train_size = len(self.train_data)
-        data = self._preprocess_data(self.train_data + self.test_data)
-        labels = np.asarray(self._labels_to_prob_vectors(self.train_labels + self.test_labels))
+        train_size = len(train_data)
+        data = self._preprocess_data(train_data + test_data)
+        labels = np.asarray(self._labels_to_prob_vectors(train_labels + test_labels))
 
         # perform data embedding through GloVe model
         train_data, test_data = self._get_glove_embedded_data(data, train_size)
@@ -137,11 +137,17 @@ class SequenceClassifierInput(object):
                 return (dataset_dict[TRAIN_DATA_KEY], dataset_dict[TEST_DATA_KEY],
                         dataset_dict[TRAIN_LABELS_KEY], dataset_dict[TEST_LABELS_KEY])
             except FileNotFoundError:
-                pass
+                dataset_dict = self._load_dataset(self.cached_dataset)
+                train_data = dataset_dict[TRAIN_DATA_KEY]
+                test_data = dataset_dict[TEST_DATA_KEY]
+                train_labels = dataset_dict[TRAIN_LABELS_KEY]
+                test_labels = dataset_dict[TEST_LABELS_KEY]
+        else:
+            train_data, test_data, train_labels, test_labels = self._get_training_inputs_by_labels()
 
-        train_size = len(self.train_data)
-        data = self._preprocess_data(self.train_data + self.test_data, encode=True, pad=True)
-        labels = self._labels_to_integers(self.train_labels + self.test_labels)
+        train_size = len(train_data)
+        data = self._preprocess_data(train_data + test_data, encode=True, pad=True)
+        labels = self._labels_to_integers(train_labels + test_labels)
 
         split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
         self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)
@@ -377,16 +383,6 @@ class SequenceClassifierInput(object):
 
 
 if __name__ == '__main__':
-    from collections import Counter
-
     CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
     clf_input = SequenceClassifierInput(considered_labels=CONSIDERED_CLASSES, inputs_per_label=4000)
     clf_input.get_rnn_train_test_data()
-
-    inputs = clf_input.train_data + clf_input.test_data
-    labels_ = clf_input.train_labels + clf_input.test_labels
-    c = Counter(labels_)
-
-    print('inputs num:', len(inputs))
-    print('labels num:', len(labels_))
-    print(c)
