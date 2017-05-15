@@ -105,7 +105,7 @@ class SequenceClassifierInput(object):
         labels = np.asarray(self._labels_to_prob_vectors(self.train_labels + self.test_labels))
 
         # perform data embedding through GloVe model
-        train_data, test_data = self._get_glove_embedded_data_splits(data, train_size)
+        train_data, test_data = self._get_glove_embedded_data(data, train_size)
 
         split_dataset = (train_data, test_data, labels[:train_size], labels[train_size:])
         self._dump_dataset(split_dataset, suffix=RNN_SUFFIX, glove_embedding_size=GLOVE_EMBEDDING_SIZE)
@@ -269,7 +269,7 @@ class SequenceClassifierInput(object):
             labels_dict[label] = label_vector
         return [labels_dict[label] for label in labels]
 
-    def _get_glove_embedded_data_splits(self, data, train_size):
+    def _get_glove_embedded_data(self, data, train_size):
         """
         Create embeddings of the given data through GloVe model and return train and test splits.
         
@@ -304,14 +304,14 @@ class SequenceClassifierInput(object):
         :param data: a list of input data.
         :return: the GloVe embeddings matrix.
         """
-        glove_matrix = []
+        filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix.mmap')
+        max_cols_num = len(max(data, key=len))
+        glove_matrix = np.memmap(filename, dtype='float32', mode='w+',
+                                 shape=(len(data), max_cols_num, GLOVE_EMBEDDING_SIZE))
         for shingle_list in data:
-            vectors = []
-            for shingle in shingle_list:
-                vec = glove_model.embedding_for(shingle)
-                vectors.append(vec)
-            glove_matrix.append(list(vectors))
-        return np.asarray(self._pad_glove_embeddings(glove_matrix))
+            embeddings = [glove_model.embedding_for(shingle) for shingle in shingle_list]
+            np.append(glove_matrix, np.asarray(embeddings))
+        return glove_matrix
 
     @staticmethod
     def _get_n_grams(string, n=3):
@@ -357,9 +357,9 @@ if __name__ == '__main__':
     clf_input.get_rnn_train_test_data()
 
     inputs = clf_input.train_data + clf_input.test_data
-    labels = clf_input.train_labels + clf_input.test_labels
-    c = Counter(labels)
+    labels_ = clf_input.train_labels + clf_input.test_labels
+    c = Counter(labels_)
 
     print('inputs num:', len(inputs))
-    print('labels num:', len(labels))
+    print('labels num:', len(labels_))
     print(c)
