@@ -256,11 +256,16 @@ class SequenceClassifierInput(object):
         # build sequences embeddings and partition the dataset into train and test splits
         for idx, shingle_list in enumerate(data):
             embeddings = [glove_model.embedding_for(shingle) for shingle in shingle_list]
+
+            # pad the sequence with respect to max length
+            padding_length = max_cols_num - len(embeddings)
+            embeddings += [[PADDING_VALUE] * GLOVE_EMBEDDING_SIZE] * padding_length
+
             if idx < train_size:
-                np.append(glove_matrix_train, np.asarray(embeddings), axis=0)
+                glove_matrix_train[idx] = np.asarray(embeddings)
                 glove_matrix_train.flush()
             else:
-                np.append(glove_matrix_test, np.asarray(embeddings), axis=0)
+                glove_matrix_test[idx - train_size] = np.asarray(embeddings)
                 glove_matrix_test.flush()
         return glove_matrix_train, glove_matrix_test
 
@@ -369,16 +374,6 @@ class SequenceClassifierInput(object):
         for shingle_list in data:
             padding_length = max_length - len(shingle_list)
             shingle_list += [PADDING_VALUE] * padding_length
-        return data
-
-    @staticmethod
-    def _pad_glove_embeddings(data):
-        max_length = len(max(data, key=len))
-
-        # pad inputs with respect to max length
-        for sequence in data:
-            padding_length = max_length - len(sequence)
-            sequence += [[PADDING_VALUE] * GLOVE_EMBEDDING_SIZE] * padding_length
         return data
 
 
