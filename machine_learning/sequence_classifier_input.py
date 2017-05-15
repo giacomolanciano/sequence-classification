@@ -54,6 +54,18 @@ class MissingInputError(Exception):
 class SequenceClassifierInput(object):
     def __init__(self, considered_labels=None, cached_dataset=None, table_name='protein', inputs_per_label=1000,
                  spectrum=3, test_size=0.25, random_state=42, progress=True):
+        """
+        A class representing the input data to be fed to a sequence classifier.
+        
+        :param considered_labels: the list of relevant labels.
+        :param cached_dataset: the name of the dataset dump to be restored.
+        :param table_name: the table where training inputs are stored.
+        :param inputs_per_label: how many inputs per label to be retrieved.
+        :param spectrum: the length of a shingle.
+        :param test_size: the size of the test split.
+        :param random_state: the random state.
+        :param progress: whether progress message has to be shown to the user or not.
+        """
         self.progress = progress
         self.considered_labels = considered_labels
         self.cached_dataset = cached_dataset
@@ -70,8 +82,7 @@ class SequenceClassifierInput(object):
             self.cached_dataset = None
             self.labels_num = len(considered_labels)
             self.train_data, self.test_data, self.train_labels, self.test_labels = \
-                self._get_training_inputs_by_labels(
-                    considered_labels, table_name, inputs_per_label, test_size, random_state)
+                self._get_training_inputs_by_labels()
         elif cached_dataset:
             dataset_dict = self._load_dataset(cached_dataset)
             self.dump_basename = cached_dataset
@@ -90,6 +101,8 @@ class SequenceClassifierInput(object):
     def get_rnn_train_test_data(self):
         """
         Create training and test splits (data and corresponding labels) for RNN.
+        
+        :return: the dataset splits to be fed to RNN.
         """
         if self.cached_dataset:
             # return cached intermediate dataset if exists
@@ -114,6 +127,8 @@ class SequenceClassifierInput(object):
     def get_spectrum_train_test_data(self):
         """
         Create training and test splits (data and corresponding labels) for Spectrum Kernel.
+        
+        :return: the dataset splits to be fed to SVM (Spectrum Kernel).
         """
         if self.cached_dataset:
             # return cached intermediate dataset if exists
@@ -132,114 +147,57 @@ class SequenceClassifierInput(object):
         self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)
         return split_dataset
 
-    def _get_training_inputs_by_labels(self, considered_labels, table_name, inputs_per_label, test_size, random_state):
+    def _get_training_inputs_by_labels(self):
         """
         Retrieve training pairs given a list of relevant labels.
         
-        :param considered_labels: the list of relevant labels.
-        :param table_name: the table where training inputs are stored.
-        :param inputs_per_label: how many inputs per label to be retrieved.
-        :param test_size: the size of the test split.
-        :param random_state: the random state.
-        :return: two lists, one containing training data and one containing corresponding labels.
+        :return: two lists containing training data and corresponding labels respectively.
         """
         data = []
         labels = []
-        for label in considered_labels:
-            label_table = persistence.get_training_inputs_by_label(label, table_name=table_name, limit=inputs_per_label)
+        for label in self.considered_labels:
+            label_table = persistence.get_training_inputs_by_label(label, table_name=self.table_name,
+                                                                   limit=self.inputs_per_label)
 
-            if len(label_table) < inputs_per_label:
+            if len(label_table) < self.inputs_per_label:
                 raise ValueError('The label %s has less than %d items associated with it in the database.'
-                                 % (label, inputs_per_label))
+                                 % (label, self.inputs_per_label))
 
             for row in label_table:
                 data.append(row[0])
                 labels.append(row[1])
-        split_dataset = train_test_split(data, labels, test_size=test_size, random_state=random_state)
+        split_dataset = train_test_split(data, labels, test_size=self.test_size, random_state=self.random_state)
         self.time = int(time.time())
         self._dump_dataset(split_dataset)
         return split_dataset
 
-    def _dump_dataset(self, dataset, suffix='', **kwargs):
-        """
-        Create a dump of the given dataset in secondary storage, appending the given suffix to the filename (to identify
-        the intermediate result). The dataset must be a tuple of four elements corresponding respectively to:
-        train data, test data, train labels, test labels.
-        
-        :type dataset: tuple
-        :param dataset: the object that represents the dataset.
-        :param suffix: the string that identifies the intermediate step.
-        :param kwargs: a dict that provides extra descriptive parameters of the given dataset.
-        """
-        dataset_dict = {
-            SPECTRUM_KEY: self.spectrum,
-            LABELS_KEY: self.considered_labels,
-            INPUTS_PER_LABEL_KEY: self.inputs_per_label,
-            TIME_KEY: self.time,
-            TRAIN_DATA_KEY: dataset[TRAIN_DATA_POS],
-            TEST_DATA_KEY: dataset[TEST_DATA_POS],
-            TRAIN_LABELS_KEY: dataset[TRAIN_LABELS_POS],
-            TEST_LABELS_KEY: dataset[TEST_LABELS_POS]
-        }
-
-        if kwargs:
-            # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
-            dataset_dict.update(kwargs)
-
-        if not self.dump_basename:
-            self.dump_basename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels)
-        dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])
-        dirname = os.path.join(DATA_FOLDER, dirname)
-        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
-        for key, val in dataset_dict.items():
-            archive[key] = val
-        try:
-            archive.dump()
-        except MemoryError:
-            print('The dataset dump %s has not been stored due to memory error.' % dirname, file=sys.stderr)
-
-    @staticmethod
-    def _load_dataset(cached_dataset, suffix=None):
-        """
-        Load a dataset in memory from a dump in secondary storage identified by the given filename and optional suffix 
-        (to identify the intermediate result).
-        
-        :param cached_dataset: the filename of the dataset.
-        :param suffix: the string that identifies the intermediate step.
-        :return: the object that represents the dataset.
-        """
-        if suffix:
-            dirname = cached_dataset + suffix
-        else:
-            dirname = cached_dataset
-        dirname = os.path.join(DATA_FOLDER, dirname)
-
-        if not os.path.isdir(dirname):
-            raise FileNotFoundError
-
-        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
-        archive.load()
-        return archive
-
     def _preprocess_data(self, data, encode=False, pad=False):
+        """
+        Preprocess the data to be fed to a sequence classifier.
+        
+        :param data: the data to be preprocessed.
+        :param encode: whether the binary encoding has to be performed.
+        :param pad: whether the shingles lists padding has to be performed.
+        :return: the preprocessed data.
+        """
         # apply shingling on data, each item becomes a shingles list
-        preprocessed_data = [self._get_n_grams(item, n=self.spectrum) for item in data]
+        data = [self._get_n_grams(item, n=self.spectrum) for item in data]
 
         if encode:
             # transform string sequences into binary sequences
             encoded_data = []
-            for shingle_list in preprocessed_data:
+            for shingle_list in data:
                 encoded_sequence = []
                 for shingle in shingle_list:
                     encoded_sequence.append(self._encode_sequence(shingle))
                 encoded_data.append(encoded_sequence)
-            preprocessed_data = encoded_data
+            data = encoded_data
 
         if pad:
             # pad shingles lists looking at the maximum length
-            preprocessed_data = self._pad_shingles_lists(preprocessed_data)
+            data = self._pad_shingles_lists(data)
 
-        return preprocessed_data
+        return data
 
     def _labels_to_integers(self, labels):
         """
@@ -299,6 +257,67 @@ class SequenceClassifierInput(object):
                 np.append(glove_matrix_test, np.asarray(embeddings), axis=0)
                 glove_matrix_test.flush()
         return glove_matrix_train, glove_matrix_test
+
+    def _dump_dataset(self, dataset, suffix='', **kwargs):
+        """
+        Create a dump of the given dataset in secondary storage, appending the given suffix to the filename (to identify
+        the intermediate result). The dataset must be a tuple of four elements corresponding respectively to:
+        train data, test data, train labels, test labels.
+
+        :type dataset: tuple
+        :param dataset: the object that represents the dataset.
+        :param suffix: the string that identifies the intermediate step.
+        :param kwargs: a dict that provides extra descriptive parameters of the given dataset.
+        """
+        dataset_dict = {
+            SPECTRUM_KEY: self.spectrum,
+            LABELS_KEY: self.considered_labels,
+            INPUTS_PER_LABEL_KEY: self.inputs_per_label,
+            TIME_KEY: self.time,
+            TRAIN_DATA_KEY: dataset[TRAIN_DATA_POS],
+            TEST_DATA_KEY: dataset[TEST_DATA_POS],
+            TRAIN_LABELS_KEY: dataset[TRAIN_LABELS_POS],
+            TEST_LABELS_KEY: dataset[TEST_LABELS_POS]
+        }
+
+        if kwargs:
+            # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
+            dataset_dict.update(kwargs)
+
+        if not self.dump_basename:
+            self.dump_basename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels)
+        dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])
+        dirname = os.path.join(DATA_FOLDER, dirname)
+        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+        for key, val in dataset_dict.items():
+            archive[key] = val
+        try:
+            archive.dump()
+        except MemoryError:
+            print('The dataset dump %s has not been stored due to memory error.' % dirname, file=sys.stderr)
+
+    @staticmethod
+    def _load_dataset(cached_dataset, suffix=None):
+        """
+        Load a dataset in memory from a dump in secondary storage identified by the given filename and optional suffix 
+        (to identify the intermediate result).
+
+        :param cached_dataset: the filename of the dataset.
+        :param suffix: the string that identifies the intermediate step.
+        :return: the object that represents the dataset.
+        """
+        if suffix:
+            dirname = cached_dataset + suffix
+        else:
+            dirname = cached_dataset
+        dirname = os.path.join(DATA_FOLDER, dirname)
+
+        if not os.path.isdir(dirname):
+            raise FileNotFoundError
+
+        archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
+        archive.load()
+        return archive
 
     @staticmethod
     def _train_glove_model(data):
