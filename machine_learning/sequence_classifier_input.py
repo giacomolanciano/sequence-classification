@@ -271,11 +271,42 @@ class SequenceClassifierInput(object):
 
     def _get_glove_embedded_data(self, data, train_size):
         """
-        Create embeddings of the given data through GloVe model and return train and test splits.
+        Return two matrices which rows correspond to sequences GloVe embeddings of train and test splits respectively.
+        Each sequence embedding is computed as the sequence of the embedding of its n-grams.
+
+        :param data: a list of input data.
+        :param train_size: the size of the training split.
+        :return: the GloVe embeddings matrices for train and test splits respectively.
+        """
+        max_cols_num = len(max(data, key=len))
+        train_filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix_train.mmap')
+        test_filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix_test.mmap')
+
+        glove_matrix_train = np.memmap(train_filename, dtype='float32', mode='w+',
+                                       shape=(train_size, max_cols_num, GLOVE_EMBEDDING_SIZE))
+        glove_matrix_test = np.memmap(test_filename, dtype='float32', mode='w+',
+                                      shape=(len(data) - train_size, max_cols_num, GLOVE_EMBEDDING_SIZE))
+
+        glove_model = self._train_glove_model(data)
+
+        # build sequences embeddings and partition the dataset into train and test splits
+        for idx, shingle_list in enumerate(data):
+            embeddings = [glove_model.embedding_for(shingle) for shingle in shingle_list]
+            if idx < train_size:
+                np.append(glove_matrix_train, np.asarray(embeddings), axis=0)
+                glove_matrix_train.flush()
+            else:
+                np.append(glove_matrix_test, np.asarray(embeddings), axis=0)
+                glove_matrix_test.flush()
+        return glove_matrix_train, glove_matrix_test
+
+    @staticmethod
+    def _train_glove_model(data):
+        """
+        Train a GloVe model with the given data.
         
         :param data: the data.
-        :param train_size: the size of the train split.
-        :return: train and test splits of the given data.
+        :return: the trained GloVe model.
         """
         print('Training GloVe model...')
         glove_model = tf_glove.GloVeModel(embedding_size=GLOVE_EMBEDDING_SIZE, context_size=10)
@@ -288,30 +319,7 @@ class SequenceClassifierInput(object):
 
         elapsed_time = (time.time() - start_time)
         print('GloVe model training time:', timedelta(seconds=elapsed_time))
-
-        # build sequences embeddings and partition the dataset into train and test splits
-        glove_matrix = self._build_glove_matrix(glove_model, data)
-        train_data = glove_matrix[:train_size]
-        test_data = glove_matrix[train_size:]
-        return train_data, test_data
-
-    def _build_glove_matrix(self, glove_model, data):
-        """
-        Return a matrix which rows correspond to sequences GloVe embeddings.
-        Each sequence embedding is computed as the average of the embedding of its n-grams.
-
-        :param glove_model: a trained GloVe model.
-        :param data: a list of input data.
-        :return: the GloVe embeddings matrix.
-        """
-        filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix.mmap')
-        max_cols_num = len(max(data, key=len))
-        glove_matrix = np.memmap(filename, dtype='float32', mode='w+',
-                                 shape=(len(data), max_cols_num, GLOVE_EMBEDDING_SIZE))
-        for shingle_list in data:
-            embeddings = [glove_model.embedding_for(shingle) for shingle in shingle_list]
-            np.append(glove_matrix, np.asarray(embeddings))
-        return glove_matrix
+        return glove_model
 
     @staticmethod
     def _get_n_grams(string, n=3):
