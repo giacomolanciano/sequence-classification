@@ -11,6 +11,8 @@ from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT
 from utils.files import unique_filename
 
+import inspect
+
 CONSIDERED_LABELS = ['HYDROLASE', 'TRANSFERASE']
 INPUTS_PER_LABEL = 4000
 NEURONS_NUM = 200
@@ -60,13 +62,29 @@ class SequenceClassifier:
 
     @lazy_property
     def prediction(self):
+        def lstm_cell():
+            # With the latest TensorFlow source code (as of Mar 27, 2017),
+            # the BasicLSTMCell will need a reuse parameter which is unfortunately not
+            # defined in TensorFlow 1.0. To maintain backwards compatibility, we add
+            # an argument check here:
+            if 'reuse' in inspect.getargspec(
+                    tf.contrib.rnn.BasicLSTMCell.__init__).args:
+                return tf.contrib.rnn.BasicLSTMCell(
+                    self._neurons_num, forget_bias=0.0, state_is_tuple=True,
+                    reuse=tf.get_variable_scope().reuse)
+            else:
+                return tf.contrib.rnn.BasicLSTMCell(
+                    self._neurons_num, forget_bias=0.0, state_is_tuple=True)
+
         # Recurrent network.
-        cell = tf.contrib.rnn.BasicLSTMCell(self._neurons_num)
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout_keep_prob)
-        network = tf.contrib.rnn.MultiRNNCell([cell] * self._layers_num)
+        attn_cell = lstm_cell
+        if DROPOUT_KEEP_PROB < 1:
+            def attn_cell():
+                return tf.contrib.rnn.DropoutWrapper(lstm_cell(), output_keep_prob=self.dropout_keep_prob)
+        cell = tf.contrib.rnn.MultiRNNCell([attn_cell()] * self._layers_num, state_is_tuple=True)
 
         # discard the state, since every time we look at a new sequence it becomes irrelevant.
-        output, _ = tf.nn.dynamic_rnn(network, self.data, dtype=tf.float32, sequence_length=self.length)
+        output, _ = tf.nn.dynamic_rnn(cell, self.data, dtype=tf.float32, sequence_length=self.length)
 
         # Select last output.
         last = self._last_relevant(output, self.length)
