@@ -6,6 +6,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import time
 import numpy as np
+from memory_profiler import profile
 
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT
@@ -126,6 +127,7 @@ class SequenceClassifier:
         return relevant
 
 
+@profile
 def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(
