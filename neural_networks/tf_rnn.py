@@ -194,5 +194,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
-    # main(cached_dataset='1494772695_3_HYDROLASE_TRANSFERASE_')
+    # main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
+    main(cached_dataset='1494918744_3_HYDROLASE_TRANSFERASE')

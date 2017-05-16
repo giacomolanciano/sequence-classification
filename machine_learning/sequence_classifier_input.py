@@ -10,7 +10,8 @@ from utils import persistence
 from utils.constants import \
     PADDING_VALUE, SPECTRUM_KEY, LABELS_KEY, INPUTS_PER_LABEL_KEY, TIME_KEY, RNN_SUFFIX, SPECTRUM_SUFFIX, \
     FILENAME_SEPARATOR, DATA_FOLDER, TRAIN_DATA_KEY, TEST_DATA_KEY, TRAIN_LABELS_KEY, TEST_LABELS_KEY, \
-    TRAIN_DATA_POS, TEST_DATA_POS, TRAIN_LABELS_POS, TEST_LABELS_POS
+    TRAIN_DATA_POS, TEST_DATA_POS, TRAIN_LABELS_POS, TEST_LABELS_POS, GLOVE_TRAIN_SUFFIX, GLOVE_TEST_SUFFIX, \
+    GLOVE_EMBEDDING_SIZE_KEY, MAX_COLS_NUM_KEY
 
 import klepto
 import time
@@ -102,7 +103,28 @@ class SequenceClassifierInput(object):
             # return cached intermediate dataset if exists
             try:
                 dataset_dict = self._load_dataset(self.cached_dataset, suffix=RNN_SUFFIX)
-                return (dataset_dict[TRAIN_DATA_KEY], dataset_dict[TEST_DATA_KEY],
+                train_filename = os.path.join(DATA_FOLDER,
+                                              FILENAME_SEPARATOR.join([self.dump_basename, GLOVE_TRAIN_SUFFIX]))
+                test_filename = os.path.join(DATA_FOLDER,
+                                             FILENAME_SEPARATOR.join([self.dump_basename, GLOVE_TEST_SUFFIX]))
+
+                # retrieve train and test data splits shapes
+                train_size = len(dataset_dict[TRAIN_LABELS_KEY])
+                test_size = len(dataset_dict[TEST_LABELS_KEY])
+                max_cols_num = dataset_dict[MAX_COLS_NUM_KEY]
+                glove_embedding_size = dataset_dict[GLOVE_EMBEDDING_SIZE_KEY]
+
+                # restore the memory mappings for train and test data splits
+                glove_matrix_train = np.memmap(
+                    train_filename, dtype='float32', mode='r+',
+                    shape=(train_size, max_cols_num, glove_embedding_size)
+                )
+                glove_matrix_test = np.memmap(
+                    test_filename, dtype='float32', mode='r+',
+                    shape=(test_size, max_cols_num, glove_embedding_size)
+                )
+
+                return (glove_matrix_train, glove_matrix_test,
                         dataset_dict[TRAIN_LABELS_KEY], dataset_dict[TEST_LABELS_KEY])
             except FileNotFoundError:
                 dataset_dict = self._load_dataset(self.cached_dataset)
@@ -115,13 +137,15 @@ class SequenceClassifierInput(object):
 
         train_size = len(train_data)
         data = self._preprocess_data(train_data + test_data)
-        labels = np.asarray(self._labels_to_prob_vectors(train_labels + test_labels))
+        train_labels = np.asarray(self._labels_to_prob_vectors(train_labels))
+        test_labels = np.asarray(self._labels_to_prob_vectors(test_labels))
 
         # perform data embedding through GloVe model
-        train_data, test_data = self._get_glove_embedded_data(data, train_size)
+        train_data, test_data, max_cols_num = self._get_glove_embedded_data(data, train_size)
 
-        split_dataset = (train_data, test_data, labels[:train_size], labels[train_size:])
-        self._dump_dataset(split_dataset, suffix=RNN_SUFFIX, glove_embedding_size=GLOVE_EMBEDDING_SIZE)
+        split_dataset = (train_data, test_data, train_labels, test_labels)
+        self._dump_dataset(split_dataset, suffix=RNN_SUFFIX,
+                           glove_embedding_size=GLOVE_EMBEDDING_SIZE, max_cols_num=max_cols_num)
         return split_dataset
 
     def get_spectrum_train_test_data(self):
@@ -147,9 +171,10 @@ class SequenceClassifierInput(object):
 
         train_size = len(train_data)
         data = self._preprocess_data(train_data + test_data, encode=True, pad=True)
-        labels = self._labels_to_integers(train_labels + test_labels)
+        train_labels = self._labels_to_integers(train_labels)
+        test_labels = self._labels_to_integers(test_labels)
 
-        split_dataset = data[:train_size], data[train_size:], labels[:train_size], labels[train_size:]
+        split_dataset = (data[:train_size], data[train_size:], train_labels, test_labels)
         self._dump_dataset(split_dataset, suffix=SPECTRUM_SUFFIX)
         return split_dataset
 
@@ -235,16 +260,16 @@ class SequenceClassifierInput(object):
 
     def _get_glove_embedded_data(self, data, train_size):
         """
-        Return two matrices which rows correspond to sequences GloVe embeddings of train and test splits respectively.
+        Compute two matrices which rows correspond to sequences GloVe embeddings of train and test splits respectively.
         Each sequence embedding is computed as the sequence of the embedding of its n-grams.
 
         :param data: a list of input data.
         :param train_size: the size of the training split.
-        :return: the GloVe embeddings matrices for train and test splits respectively.
+        :return: the GloVe embeddings matrices for train and test splits respectively and the max sequence length.
         """
         max_cols_num = len(max(data, key=len))
-        train_filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix_train.mmap')
-        test_filename = os.path.join(DATA_FOLDER, self.dump_basename + '_glove_matrix_test.mmap')
+        train_filename = os.path.join(DATA_FOLDER, FILENAME_SEPARATOR.join([self.dump_basename, GLOVE_TRAIN_SUFFIX]))
+        test_filename = os.path.join(DATA_FOLDER, FILENAME_SEPARATOR.join([self.dump_basename, GLOVE_TEST_SUFFIX]))
 
         glove_matrix_train = np.memmap(train_filename, dtype='float32', mode='w+',
                                        shape=(train_size, max_cols_num, GLOVE_EMBEDDING_SIZE))
@@ -267,7 +292,7 @@ class SequenceClassifierInput(object):
             else:
                 glove_matrix_test[idx - train_size] = np.asarray(embeddings)
                 glove_matrix_test.flush()
-        return glove_matrix_train, glove_matrix_test
+        return glove_matrix_train, glove_matrix_test, max_cols_num
 
     def _dump_dataset(self, dataset, suffix='', **kwargs):
         """
@@ -285,11 +310,16 @@ class SequenceClassifierInput(object):
             LABELS_KEY: self.considered_labels,
             INPUTS_PER_LABEL_KEY: self.inputs_per_label,
             TIME_KEY: self.time,
-            TRAIN_DATA_KEY: dataset[TRAIN_DATA_POS],
-            TEST_DATA_KEY: dataset[TEST_DATA_POS],
             TRAIN_LABELS_KEY: dataset[TRAIN_LABELS_POS],
             TEST_LABELS_KEY: dataset[TEST_LABELS_POS]
         }
+
+        if suffix != RNN_SUFFIX:
+            data_dict = {
+                TRAIN_DATA_KEY: dataset[TRAIN_DATA_POS],
+                TEST_DATA_KEY: dataset[TEST_DATA_POS]
+            }
+            dataset_dict.update(data_dict)
 
         if kwargs:
             # merge dicts (with second dict's values overwriting those from the first, if key conflicts exist).
@@ -297,7 +327,12 @@ class SequenceClassifierInput(object):
 
         if not self.dump_basename:
             self.dump_basename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels)
-        dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])
+
+        if suffix != '':
+            dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])
+        else:
+            dirname = self.dump_basename
+
         dirname = os.path.join(DATA_FOLDER, dirname)
         archive = klepto.archives.dir_archive(dirname, cached=True, serialized=True)
         for key, val in dataset_dict.items():
@@ -318,7 +353,7 @@ class SequenceClassifierInput(object):
         :return: the object that represents the dataset.
         """
         if suffix:
-            dirname = cached_dataset + suffix
+            dirname = FILENAME_SEPARATOR.join([cached_dataset, suffix])
         else:
             dirname = cached_dataset
         dirname = os.path.join(DATA_FOLDER, dirname)
@@ -378,6 +413,16 @@ class SequenceClassifierInput(object):
 
 
 if __name__ == '__main__':
-    CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
-    clf_input = SequenceClassifierInput(considered_labels=CONSIDERED_CLASSES, inputs_per_label=4000)
-    clf_input.get_rnn_train_test_data()
+    import utils.manage_dataset as md
+
+    # CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
+    # clf_input = SequenceClassifierInput(cached_dataset='1494918744_3_HYDROLASE_TRANSFERASE')
+    # clf_input.get_rnn_train_test_data()
+
+    d = md.load_dataset('1494918744_3_HYDROLASE_TRANSFERASE_rnn')
+    # data_ = clf_input._preprocess_data(d[TRAIN_DATA_KEY]+d[TEST_DATA_KEY])
+    # max_length = len(max(data_, key=len))
+    # print(max_length)  # 2510
+
+    d['max_cols_num'] = 2510
+    md.dump_dataset(d, '1494918744_3_HYDROLASE_TRANSFERASE_rnn')
