@@ -413,16 +413,6 @@ class SequenceClassifierInput(object):
 
 
 if __name__ == '__main__':
-    import utils.manage_dataset as md
-
-    # CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
-    # clf_input = SequenceClassifierInput(cached_dataset='1494918744_3_HYDROLASE_TRANSFERASE')
-    # clf_input.get_rnn_train_test_data()
-
-    d = md.load_dataset('1494918744_3_HYDROLASE_TRANSFERASE_rnn')
-    # data_ = clf_input._preprocess_data(d[TRAIN_DATA_KEY]+d[TEST_DATA_KEY])
-    # max_length = len(max(data_, key=len))
-    # print(max_length)  # 2510
-
-    d['max_cols_num'] = 2510
-    md.dump_dataset(d, '1494918744_3_HYDROLASE_TRANSFERASE_rnn')
+    CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
+    clf_input = SequenceClassifierInput(cached_dataset='1494918744_3_HYDROLASE_TRANSFERASE')
+    clf_input.get_rnn_train_test_data()
