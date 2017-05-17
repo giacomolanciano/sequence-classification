@@ -10,15 +10,15 @@ from machine_learning.kernel_functions import occurrence_dict_spectrum_kernel
 from machine_learning.model_performance_measure import ModelPerformanceMeasure
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 
-CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE', 'OXIDOREDUCTASE']
-# CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
+# CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE', 'OXIDOREDUCTASE']
+CONSIDERED_CLASSES = ['HYDROLASE', 'TRANSFERASE']
 
 
 clf = svm.SVC(kernel='precomputed')
 
 # build training and test splits
 print('Loading dataset...')
-clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, table_name='protein', inputs_per_label=200, spectrum=3)
+clf_input = SequenceClassifierInput(CONSIDERED_CLASSES, table_name='protein', inputs_per_label=1000, spectrum=25)
 train_data, test_data, train_labels, test_labels = clf_input.get_spectrum_train_test_data()
 train_labels = np.asarray(train_labels)
 test_labels = np.asarray(test_labels)
