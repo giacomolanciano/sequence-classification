@@ -9,14 +9,14 @@ import numpy as np
 from memory_profiler import profile
 
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
-from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT
+from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT, FILENAME_SEPARATOR
 from utils.files import unique_filename
 
 import inspect
 
 CONSIDERED_LABELS = ['HYDROLASE', 'TRANSFERASE']
 INPUTS_PER_LABEL = 500
-NEURONS_NUM = 200
+NEURONS_NUM = 100
 LAYERS_NUM = 3
 LEARNING_RATE = 0.003
 EPOCHS_NUM = 10
@@ -187,11 +187,18 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     """
     PLOT ERROR FUNCTION
     """
-    plt.figure(1)
-    plt.plot([x for x in range(1, EPOCHS_NUM + 1)], errors)
+    _, fig_basename = unique_filename(os.path.join(TRAINED_MODELS_FOLDER, clf_input.dump_basename))
+    fig = fig_basename + IMG_EXT
+    fig_zoom = FILENAME_SEPARATOR.join([fig_basename, 'zoom']) + IMG_EXT
+
+    plt.figure()
+    plt.plot(range(1, EPOCHS_NUM + 1), errors)
     plt.axis([1, EPOCHS_NUM, 0, 1])
-    _, figname = unique_filename(os.path.join(TRAINED_MODELS_FOLDER, clf_input.dump_basename + IMG_EXT))
-    plt.savefig(figname, bbox_inches='tight')
+    plt.savefig(fig, bbox_inches='tight')
+
+    plt.figure()
+    plt.plot(range(1, EPOCHS_NUM + 1), errors)
+    plt.savefig(fig_zoom, bbox_inches='tight')
     # plt.show()
 
 
