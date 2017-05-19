@@ -207,11 +207,12 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     plt.savefig(fig_zoom, bbox_inches='tight')
 
     plt.figure()
-    plt.plot(range(1, EPOCHS_NUM + 1), [sum(errors[i:i+STEPS_NUM])/STEPS_NUM for i in range(0, measures_num, STEPS_NUM)])
+    # group steps errors of the same epoch and compute the average error in epoch
+    plt.plot(range(1, EPOCHS_NUM + 1), [sum(group) / STEPS_NUM for group in zip(*[iter(errors)]*STEPS_NUM)])
     plt.savefig(fig_avg, bbox_inches='tight')
     # plt.show()
 
 
 if __name__ == '__main__':
-    # main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
-    main(cached_dataset='1494941406_3_HYDROLASE_TRANSFERASE')
+    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
+    # main(cached_dataset='1494941406_3_HYDROLASE_TRANSFERASE')
