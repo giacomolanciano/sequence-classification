@@ -326,7 +326,9 @@ class SequenceClassifierInput(object):
             dataset_dict.update(kwargs)
 
         if not self.dump_basename:
-            self.dump_basename = FILENAME_SEPARATOR.join([str(self.time), str(self.spectrum)] + self.considered_labels)
+            self.dump_basename = FILENAME_SEPARATOR.join(
+                [str(self.time), str(self.spectrum), str(self.inputs_per_label)] + self.considered_labels
+            )
 
         if suffix != '':
             dirname = FILENAME_SEPARATOR.join([self.dump_basename, suffix])

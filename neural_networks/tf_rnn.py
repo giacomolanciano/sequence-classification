@@ -15,7 +15,7 @@ from utils.files import unique_filename
 import inspect
 
 CONSIDERED_LABELS = ['HYDROLASE', 'TRANSFERASE']
-INPUTS_PER_LABEL = 500
+INPUTS_PER_LABEL = 1500
 NEURONS_NUM = 100
 LAYERS_NUM = 3
 LEARNING_RATE = 0.003
@@ -27,8 +27,8 @@ DROPOUT_KEEP_PROB = 0.5
 
 def lazy_property(funct):
     """
-    Causes the function to act like a property. The function is only evaluated once, when it's accessed for the
-    first time. The result is stored an directly returned for later accesses, for the sake of efficiency.
+    Causes the function to act like a property. The function is only evaluated once, when it is accessed for the
+    first time. The result is stored and directly returned for later accesses, for the sake of efficiency.
     """
     attribute = '_' + funct.__name__
 
@@ -162,6 +162,10 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     train_size = len(train_data)
     indices_num = int(MINI_BATCH_SIZE * train_size)
     errors = []
+
+    print('Inputs per label:  {0}'.format(clf_input.inputs_per_label))
+    print('Neurons per layer: {0}'.format(NEURONS_NUM))
+
     for epoch in range(EPOCHS_NUM):
         print('Epoch {:2d}'.format(epoch + 1))
 
@@ -172,11 +176,11 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
             mini_batch_ys = train_labels[rand_index]
             sess.run(model.optimize, {data: mini_batch_xs, target: mini_batch_ys, dropout_keep_prob: DROPOUT_KEEP_PROB})
 
-        # dropout_keep_prob is set to 1 (i.e. keep all) only for testing
-        error = sess.run(model.error, {data: test_data, target: test_labels, dropout_keep_prob: 1})
-        error_percentage = 100 * error
-        errors.append(error)
-        print('\taccuracy: {:3.1f}% \n\terror: {:3.1f}%'.format(100 - error_percentage, error_percentage))
+            # dropout_keep_prob is set to 1 (i.e. keep all) only for testing
+            error = sess.run(model.error, {data: test_data, target: test_labels, dropout_keep_prob: 1})
+            error_percentage = 100 * error
+            errors.append(error)
+            print('\taccuracy: {:3.1f}% \n\terror: {:3.1f}%'.format(100 - error_percentage, error_percentage))
 
     elapsed_time = (time.time() - start_time)
     print('RNN running time:', timedelta(seconds=elapsed_time))
@@ -190,18 +194,24 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
     _, fig_basename = unique_filename(os.path.join(TRAINED_MODELS_FOLDER, clf_input.dump_basename))
     fig = fig_basename + IMG_EXT
     fig_zoom = FILENAME_SEPARATOR.join([fig_basename, 'zoom']) + IMG_EXT
+    fig_avg = FILENAME_SEPARATOR.join([fig_basename, 'avg']) + IMG_EXT
 
+    measures_num = EPOCHS_NUM * STEPS_NUM
     plt.figure()
-    plt.plot(range(1, EPOCHS_NUM + 1), errors)
-    plt.axis([1, EPOCHS_NUM, 0, 1])
+    plt.plot(range(1, measures_num + 1), errors)
+    plt.axis([1, measures_num, 0, 1])
     plt.savefig(fig, bbox_inches='tight')
 
     plt.figure()
-    plt.plot(range(1, EPOCHS_NUM + 1), errors)
+    plt.plot(range(1, measures_num + 1), errors)
     plt.savefig(fig_zoom, bbox_inches='tight')
+
+    plt.figure()
+    plt.plot(range(1, EPOCHS_NUM + 1), [sum(errors[i:i+STEPS_NUM])/STEPS_NUM for i in range(0, measures_num, STEPS_NUM)])
+    plt.savefig(fig_avg, bbox_inches='tight')
     # plt.show()
 
 
 if __name__ == '__main__':
-    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
-    # main(cached_dataset='1494950197_3_HYDROLASE_TRANSFERASE')
+    # main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
+    main(cached_dataset='1494941406_3_HYDROLASE_TRANSFERASE')
