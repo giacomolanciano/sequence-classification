@@ -187,12 +187,16 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000, spe
     print('RNN running time:', timedelta(seconds=elapsed_time))
 
     # save model variables
-    saver.save(sess, os.path.join(TRAINED_MODELS_FOLDER, str(int(time.time())) + TF_MODEL_EXT))
+    model_checkpoint_time = str(int(time.time()))
+    model_checkpoint_dir = os.path.join(TRAINED_MODELS_FOLDER, model_checkpoint_time)
+    if not os.path.exists(model_checkpoint_dir):
+        os.makedirs(model_checkpoint_dir)
+    saver.save(sess, os.path.join(model_checkpoint_dir, model_checkpoint_time) + TF_MODEL_EXT)
 
     """
     PLOT ERROR FUNCTION
     """
-    _, fig_basename = unique_filename(os.path.join(TRAINED_MODELS_FOLDER, clf_input.dump_basename))
+    _, fig_basename = unique_filename(os.path.join(model_checkpoint_dir, clf_input.dump_basename))
     fig = fig_basename + IMG_EXT
     fig_zoom = FILENAME_SEPARATOR.join([fig_basename, 'zoom']) + IMG_EXT
     fig_avg = FILENAME_SEPARATOR.join([fig_basename, 'avg']) + IMG_EXT
