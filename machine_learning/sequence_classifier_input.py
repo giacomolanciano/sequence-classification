@@ -376,7 +376,7 @@ class SequenceClassifierInput(object):
         :return: the trained GloVe model.
         """
         print('Training GloVe model...')
-        glove_model = tf_glove.GloVeModel(embedding_size=GLOVE_EMBEDDING_SIZE, context_size=10)
+        glove_model = tf_glove.GloVeModel(embedding_size=GLOVE_EMBEDDING_SIZE, context_size=10, max_vocab_size=1000000)
 
         start_time = time.time()
 
