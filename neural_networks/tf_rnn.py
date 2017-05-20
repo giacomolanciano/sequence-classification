@@ -15,7 +15,7 @@ from utils.files import unique_filename
 import inspect
 
 CONSIDERED_LABELS = ['HYDROLASE', 'TRANSFERASE']
-INPUTS_PER_LABEL = 1500
+INPUTS_PER_LABEL = 1000
 NEURONS_NUM = 100
 LAYERS_NUM = 3
 LEARNING_RATE = 0.003
@@ -128,12 +128,13 @@ class SequenceClassifier:
 
 
 @profile
-def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
+def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000, spectrum=3):
     # retrieve input data from database
     clf_input = SequenceClassifierInput(
         considered_labels=considered_labels,
         cached_dataset=cached_dataset,
-        inputs_per_label=inputs_per_label
+        inputs_per_label=inputs_per_label,
+        spectrum=spectrum
     )
 
     train_data, test_data, train_labels, test_labels = clf_input.get_rnn_train_test_data()
@@ -214,5 +215,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000):
 
 
 if __name__ == '__main__':
-    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL)
-    # main(cached_dataset='1494941406_3_1000_HYDROLASE_TRANSFERASE')
+    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL, spectrum=25)
+    # main(cached_dataset='1495229730_10_1000_HYDROLASE_TRANSFERASE')
