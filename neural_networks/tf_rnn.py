@@ -166,6 +166,7 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000, spe
 
     print('Inputs per label:  {0}'.format(clf_input.inputs_per_label))
     print('Neurons per layer: {0}'.format(NEURONS_NUM))
+    print('Dropout keep prob: {0}'.format(DROPOUT_KEEP_PROB))
 
     for epoch in range(EPOCHS_NUM):
         print('Epoch {:2d}'.format(epoch + 1))
@@ -219,5 +220,5 @@ def main(considered_labels=None, cached_dataset=None, inputs_per_label=1000, spe
 
 
 if __name__ == '__main__':
-    main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL, spectrum=25)
-    # main(cached_dataset='1495229730_10_1000_HYDROLASE_TRANSFERASE')
+    # main(considered_labels=CONSIDERED_LABELS, inputs_per_label=INPUTS_PER_LABEL, spectrum=3)
+    main(cached_dataset='1494941406_3_1000_HYDROLASE_TRANSFERASE')
