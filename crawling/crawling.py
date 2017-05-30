@@ -1,9 +1,11 @@
 import os
+import sys
 
 import unicodecsv as csv
 import requests
 from bs4 import BeautifulSoup as bs
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 import utils.persistence as persistence
 from utils.constants import DATA_FOLDER
 

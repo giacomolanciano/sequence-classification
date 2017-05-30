@@ -1,3 +1,6 @@
+import os
+import sys
+
 from datetime import timedelta
 
 from sklearn import svm
@@ -5,6 +8,7 @@ from sklearn import model_selection
 import numpy as np
 import time
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from machine_learning.kernel_functions import precomputed_occurrence_dict_spectrum_kernel
 from machine_learning.kernel_functions import occurrence_dict_spectrum_kernel
 from machine_learning.model_performance_measure import ModelPerformanceMeasure

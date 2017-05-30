@@ -1,6 +1,9 @@
 """ Module containing various kernel functions for sequence classification problem. """
+import os
+import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import PADDING_VALUE
 

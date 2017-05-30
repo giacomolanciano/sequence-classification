@@ -1,10 +1,14 @@
 import os
-from datetime import timedelta
-
-import numpy as np
 import sys
+
+from datetime import timedelta
+import numpy as np
 from sklearn.model_selection import train_test_split
 
+import klepto
+import time
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from neural_networks import tf_glove
 from utils import persistence
 from utils.constants import \
@@ -13,8 +17,6 @@ from utils.constants import \
     TRAIN_DATA_POS, TEST_DATA_POS, TRAIN_LABELS_POS, TEST_LABELS_POS, GLOVE_TRAIN_SUFFIX, GLOVE_TEST_SUFFIX, \
     GLOVE_EMBEDDING_SIZE_KEY, MAX_COLS_NUM_KEY
 
-import klepto
-import time
 
 BASE_TWO = 2
 AMINO_ACIDS_DICT = {

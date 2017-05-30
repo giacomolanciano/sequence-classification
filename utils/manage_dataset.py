@@ -1,9 +1,11 @@
 import os
+import sys
 
 from pprint import pprint
 
 import klepto
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from utils.constants import DATA_FOLDER
 
 

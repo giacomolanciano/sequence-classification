@@ -1,4 +1,6 @@
 import os
+import sys
+
 import functools
 from datetime import timedelta
 
@@ -8,6 +10,7 @@ import time
 import numpy as np
 from memory_profiler import profile
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from machine_learning.sequence_classifier_input import SequenceClassifierInput
 from utils.constants import TRAINED_MODELS_FOLDER, TF_MODEL_EXT, IMG_EXT, FILENAME_SEPARATOR
 from utils.files import unique_filename

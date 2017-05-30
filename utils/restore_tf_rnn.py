@@ -1,7 +1,9 @@
 import os
+import sys
 
 import tensorflow as tf
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.path.pardir))
 from utils.constants import TRAINED_MODELS_FOLDER
 
 

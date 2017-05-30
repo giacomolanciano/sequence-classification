@@ -46,7 +46,3 @@ class ModelPerformanceMeasure:
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
         plt.show()
-
-
-if __name__ == '__main__':
-    pass
